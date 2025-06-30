@@ -1,16 +1,20 @@
 package com.prodash.service;
 
+import com.prodash.dto.ProposalFilterDTO;
+import com.prodash.dto.camara.LinkDTO;
 import com.prodash.dto.camara.PaginatedProposalResponse;
 import com.prodash.dto.camara.ProposalDTO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.web.util.UriComponentsBuilder;
 
-import java.util.Collections;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
-
 
 /**
  * Service responsible for interacting with the external Camara dos Deputados API.
@@ -29,22 +33,79 @@ public class CamaraApiService {
     }
 
     /**
-     * Fetches a list of proposals from the API.
-     * @return A list of ProposalDTOs.
+     * Fetches proposals based on a flexible set of filter criteria.
+     * @param filter The DTO containing all filter parameters.
+     * @return A list of ProposalDTOs matching the filter.
      */
-    public List<ProposalDTO> fetchProposals() {
-        // For this example, we'll fetch the first page of recent proposals.
-        // A full implementation would handle pagination to get all results.
-        String url = apiBaseUrl + "/proposicoes?ordem=DESC&ordenarPor=id";
-        try {
-            PaginatedProposalResponse response = restTemplate.getForObject(url, PaginatedProposalResponse.class);
-            if (response != null && response.getDados() != null) {
-                logger.info("Successfully fetched {} proposals from the API.", response.getDados().size());
-                return response.getDados();
-            }
-        } catch (Exception e) {
-            logger.error("Failed to fetch proposals from Camara API", e);
+    public List<ProposalDTO> fetchProposalsByFilter(ProposalFilterDTO filter) {
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(apiBaseUrl + "/proposicoes");
+
+        // Dynamically add parameters to the URL if they are present in the filter object
+        if (filter.getAno() != null && !filter.getAno().isEmpty()) {
+            filter.getAno().forEach(y -> builder.queryParam("ano", y));
         }
-        return Collections.emptyList();
+        if (filter.getSiglaTipo() != null && !filter.getSiglaTipo().isEmpty()) {
+            filter.getSiglaTipo().forEach(s -> builder.queryParam("siglaTipo", s));
+        }
+        if (filter.getAutor() != null && !filter.getAutor().isBlank()) {
+            builder.queryParam("autor", filter.getAutor());
+        }
+        if (filter.getDataApresentacaoInicio() != null) {
+            builder.queryParam("dataApresentacaoInicio", filter.getDataApresentacaoInicio());
+        }
+        if (filter.getDataApresentacaoFim() != null) {
+            builder.queryParam("dataApresentacaoFim", filter.getDataApresentacaoFim());
+        }
+        // Add other filters here as needed...
+
+        // Add sorting and pagination parameters
+        builder.queryParam("ordem", filter.getOrdem());
+        builder.queryParam("ordenarPor", filter.getOrdenarPor());
+        builder.queryParam("itens", filter.getItens());
+
+        return fetchAllPages(builder.toUriString());
+    }
+
+    /**
+     * Fetches all proposals for a given year. Used for initial database population.
+     * @param year The year to fetch proposals for.
+     * @return A list of all ProposalDTOs from that year.
+     */
+    public List<ProposalDTO> fetchProposalsByYear(int year) {
+        String initialUrl = apiBaseUrl + "/proposicoes?ano=" + year + "&ordem=ASC&ordenarPor=id&itens=100";
+        return fetchAllPages(initialUrl);
+    }
+
+    /**
+     * Generic helper method to handle pagination for any starting URL.
+     */
+    private List<ProposalDTO> fetchAllPages(String initialUrl) {
+        List<ProposalDTO> allProposals = new ArrayList<>();
+        String nextUrl = initialUrl;
+
+        while (nextUrl != null && !nextUrl.isEmpty()) {
+            logger.info("Fetching proposals from URL: {}", nextUrl);
+            try {
+                PaginatedProposalResponse response = restTemplate.getForObject(nextUrl, PaginatedProposalResponse.class);
+
+                if (response != null && response.getDados() != null) {
+                    allProposals.addAll(response.getDados());
+                    logger.info("Fetched {} proposals. Total so far: {}.", response.getDados().size(), allProposals.size());
+
+                    nextUrl = response.getLinks().stream()
+                            .filter(link -> "next".equals(link.getRel()))
+                            .findFirst()
+                            .map(LinkDTO::getHref)
+                            .orElse(null);
+                } else {
+                    nextUrl = null;
+                }
+            } catch (Exception e) {
+                logger.error("Failed to fetch proposals from URL: " + nextUrl, e);
+                nextUrl = null;
+            }
+        }
+        logger.info("Finished fetching all pages for initial URL. Total found: {}", allProposals.size());
+        return allProposals;
     }
 }
