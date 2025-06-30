@@ -1,53 +1,45 @@
 package com.prodash.scheduler;
 
-import com.prodash.dto.ProposalFilterDTO; // Import the filter DTO
-import com.prodash.dto.camara.ProposalDTO;
-import com.prodash.service.CamaraApiService;
+import com.prodash.service.JournalService;
 import com.prodash.service.ProposalService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDate;
-import java.util.List;
-
 /**
- * Handles scheduled tasks for the application, such as syncing data.
- * This version is updated to use the filtering service.
+ * Handles the full daily workflow: Ingest, Analyze, and create Journal.
  */
 @Component
 public class DataSyncScheduler {
 
     private static final Logger logger = LoggerFactory.getLogger(DataSyncScheduler.class);
-    private final CamaraApiService camaraApiService;
     private final ProposalService proposalService;
+    private final JournalService journalService;
 
-    public DataSyncScheduler(CamaraApiService camaraApiService, ProposalService proposalService) {
-        this.camaraApiService = camaraApiService;
+    public DataSyncScheduler(ProposalService proposalService, JournalService journalService) {
         this.proposalService = proposalService;
+        this.journalService = journalService;
     }
 
     /**
-     * This method will run automatically at a fixed interval to sync data.
-     * The cron expression "0 0 4 * * ?" means it runs every day at 4 AM.
+     * The main daily job that orchestrates the entire data pipeline.
+     * Runs every day at 4 AM.
      */
     @Scheduled(cron = "0 0 4 * * ?")
-    public void syncProposalData() {
-        logger.info("Starting scheduled job: Syncing proposal data...");
+    public void dailyWorkflow() {
+        logger.info("--- Starting Daily Workflow ---");
 
-        // Create a filter to fetch all proposals presented in the last 3 days.
-        // This ensures we get all new and recently updated items.
-        ProposalFilterDTO recentProposalsFilter = new ProposalFilterDTO();
-        recentProposalsFilter.setDataApresentacaoInicio(LocalDate.now().minusDays(3));
-        
-        // Use the new filter-based method to fetch proposals
-        List<ProposalDTO> proposals = camaraApiService.fetchProposalsByFilter(recentProposalsFilter);
-        
-        if (!proposals.isEmpty()) {
-            proposalService.processAndSaveProposals(proposals);
-        }
-        
-        logger.info("Finished scheduled job: Syncing proposal data.");
+        // Step 1: Ingest any new proposals from the last day.
+        proposalService.ingestRecentProposals();
+
+        // Step 2: Process a batch of any unanalyzed proposals (including the new ones).
+        // We process up to 200 per day automatically.
+        proposalService.processUnanalyzedProposals(200);
+
+        // Step 3: Create the daily journal entry based on what was just processed.
+        journalService.createDailyJournal();
+
+        logger.info("--- Daily Workflow Finished ---");
     }
 }
