@@ -4,9 +4,14 @@ import com.prodash.dto.ProposalFilterDTO;
 import com.prodash.dto.camara.LinkDTO;
 import com.prodash.dto.camara.PaginatedProposalResponse;
 import com.prodash.dto.camara.ProposalDTO;
+import com.prodash.dto.camara.ProposalDetailWrapperDTO;
+import com.prodash.dto.camara.ProposalDetailsDTO;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -17,7 +22,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Service responsible for interacting with the external Camara dos Deputados API.
+ * Service responsible for interacting with the external Camara dos Deputados
+ * API.
  */
 @Service
 public class CamaraApiService {
@@ -34,13 +40,15 @@ public class CamaraApiService {
 
     /**
      * Fetches proposals based on a flexible set of filter criteria.
+     * 
      * @param filter The DTO containing all filter parameters.
      * @return A list of ProposalDTOs matching the filter.
      */
     public List<ProposalDTO> fetchProposalsByFilter(ProposalFilterDTO filter) {
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(apiBaseUrl + "/proposicoes");
 
-        // Dynamically add parameters to the URL if they are present in the filter object
+        // Dynamically add parameters to the URL if they are present in the filter
+        // object
         if (filter.getAno() != null && !filter.getAno().isEmpty()) {
             filter.getAno().forEach(y -> builder.queryParam("ano", y));
         }
@@ -68,6 +76,7 @@ public class CamaraApiService {
 
     /**
      * Fetches all proposals for a given year. Used for initial database population.
+     * 
      * @param year The year to fetch proposals for.
      * @return A list of all ProposalDTOs from that year.
      */
@@ -86,11 +95,13 @@ public class CamaraApiService {
         while (nextUrl != null && !nextUrl.isEmpty()) {
             logger.info("Fetching proposals from URL: {}", nextUrl);
             try {
-                PaginatedProposalResponse response = restTemplate.getForObject(nextUrl, PaginatedProposalResponse.class);
+                PaginatedProposalResponse response = restTemplate.getForObject(nextUrl,
+                        PaginatedProposalResponse.class);
 
                 if (response != null && response.getDados() != null) {
                     allProposals.addAll(response.getDados());
-                    logger.info("Fetched {} proposals. Total so far: {}.", response.getDados().size(), allProposals.size());
+                    logger.info("Fetched {} proposals. Total so far: {}.", response.getDados().size(),
+                            allProposals.size());
 
                     nextUrl = response.getLinks().stream()
                             .filter(link -> "next".equals(link.getRel()))
@@ -107,5 +118,19 @@ public class CamaraApiService {
         }
         logger.info("Finished fetching all pages for initial URL. Total found: {}", allProposals.size());
         return allProposals;
+    }
+
+    public ProposalDetailsDTO fetchProposalDetails(Long id) {
+        String url = apiBaseUrl + "/proposicoes/" + id;
+        try {
+            ResponseEntity<ProposalDetailWrapperDTO> response = restTemplate.getForEntity(url,
+                    ProposalDetailWrapperDTO.class);
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                return response.getBody().getDados();
+            }
+        } catch (Exception e) {
+            logger.error("Failed to fetch details for proposal ID {}: {}", id, e.getMessage());
+        }
+        return null;
     }
 }

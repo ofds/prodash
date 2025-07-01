@@ -16,11 +16,13 @@ public class Proposal {
     private int numero;
     private int ano;
     private String ementa;
+    private String justificativa; // [NEW] To store the full justification
+    private String statusDescricao; // [NEW] To store the current status
 
     // --- AI-Generated Fields ---
     private String summaryLLM;
     private String categoryLLM;
-    private String impactoLLM; // [NEW] The new impact analysis field
+    private String impactoLLM;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
