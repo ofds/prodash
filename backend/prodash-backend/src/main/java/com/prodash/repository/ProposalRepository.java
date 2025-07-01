@@ -4,6 +4,7 @@ import com.prodash.model.Proposal;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.util.List;
 import java.util.Optional;
@@ -32,4 +33,15 @@ public interface ProposalRepository extends MongoRepository<Proposal, String> {
      * @return A list of unprocessed proposals.
      */
     List<Proposal> findBySummaryLLMIsNull(Pageable pageable);
+
+    /**
+     * [NEW] Finds all proposals presented on a specific date,
+     * sorted by a given sort order.
+     * The 'dataApresentacao' field must be an ISODate in MongoDB for this to work correctly.
+     *
+     * @param date The date of presentation.
+     * @param sort The sorting criteria (e.g., by impact score).
+     * @return A list of proposals.
+     */
+    List<Proposal> findByDataApresentacao(String date, Sort sort);
 }
