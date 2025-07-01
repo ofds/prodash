@@ -7,6 +7,9 @@ import com.google.gson.Gson;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 import java.util.List;
@@ -14,6 +17,8 @@ import java.util.stream.Collectors;
 
 @Component
 public class CamaraApiAdapter implements CamaraApiPort {
+
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(CamaraApiAdapter.class);
 
     private final RestTemplate restTemplate;
     private final String camaraApiUrl;
@@ -26,7 +31,7 @@ public class CamaraApiAdapter implements CamaraApiPort {
 
     @Override
     public List<Proposal> fetchLatestProposals() {
-        System.out.println("Fetching latest proposals from: " + camaraApiUrl);
+        log.info("Fetching latest proposals from: " + camaraApiUrl);
         String jsonResponse = restTemplate.getForObject(camaraApiUrl, String.class);
 
         // Use Gson to parse the JSON response into our DTO structure

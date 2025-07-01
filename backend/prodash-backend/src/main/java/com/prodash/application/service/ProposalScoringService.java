@@ -5,11 +5,16 @@ import com.prodash.application.port.out.LlmPort;
 import com.prodash.application.port.out.ProposalRepositoryPort;
 import com.prodash.domain.model.Proposal;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 public class ProposalScoringService implements ScoreProposalsUseCase {
+
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ProposalScoringService.class);
 
     private final ProposalRepositoryPort proposalRepositoryPort;
     private final LlmPort llmPort;
@@ -22,15 +27,15 @@ public class ProposalScoringService implements ScoreProposalsUseCase {
     // In ProposalScoringService.java
     @Override
     public void scoreProposals() {
-        System.out.println("Starting proposal scoring process...");
+        log.info("Starting proposal scoring process...");
         List<Proposal> unscoredProposals = proposalRepositoryPort.findByImpactScoreIsNull();
 
         if (unscoredProposals.isEmpty()) {
-            System.out.println("No unscored proposals to process.");
+            log.info("No unscored proposals to process.");
             return;
         }
 
-        System.out.println("Found " + unscoredProposals.size() + " unscored proposals. Scoring...");
+        log.info("Found {} unscored proposals. Scoring...", unscoredProposals.size());
 
         // Score the entire batch of unscored proposals
         List<Proposal> scoredProposals = llmPort.scoreProposals(unscoredProposals);
@@ -38,6 +43,6 @@ public class ProposalScoringService implements ScoreProposalsUseCase {
         // Save all scored proposals
         scoredProposals.forEach(proposalRepositoryPort::save);
 
-        System.out.println("Successfully scored and updated " + scoredProposals.size() + " proposals.");
+        log.info("Successfully scored and updated {} proposals.", scoredProposals.size());
     }
 }

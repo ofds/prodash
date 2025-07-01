@@ -8,9 +8,14 @@ import com.prodash.domain.model.Proposal;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 @Service
 public class ProposalIngestionService implements IngestProposalsUseCase {
+
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ProposalIngestionService.class);
 
     private final CamaraApiPort camaraApiPort;
     private final ProposalRepositoryPort proposalRepositoryPort;
@@ -25,7 +30,7 @@ public class ProposalIngestionService implements IngestProposalsUseCase {
 
     @Override
     public void ingestProposals() {
-        System.out.println("Starting proposal ingestion process...");
+        log.info("Starting proposal ingestion process...");
         List<Proposal> fetchedProposals = camaraApiPort.fetchLatestProposals();
 
         // Filter out proposals that already exist
@@ -34,11 +39,11 @@ public class ProposalIngestionService implements IngestProposalsUseCase {
                 .collect(Collectors.toList());
 
         if (newProposals.isEmpty()) {
-            System.out.println("No new proposals to ingest.");
+            log.info("No new proposals to ingest.");
             return;
         }
 
-        System.out.println("Found " + newProposals.size() + " new proposals. Summarizing...");
+        log.info("Found {} new proposals. Summarizing...", newProposals.size());
 
         // Summarize the entire batch of new proposals
         List<Proposal> summarizedProposals = llmPort.summarizeProposals(newProposals);
@@ -46,6 +51,6 @@ public class ProposalIngestionService implements IngestProposalsUseCase {
         // Save all summarized proposals
         summarizedProposals.forEach(proposalRepositoryPort::save);
 
-        System.out.println("Successfully ingested and saved " + summarizedProposals.size() + " proposals.");
+        log.info("Successfully ingested and saved {} proposals.", summarizedProposals.size());
     }
 }

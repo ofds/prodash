@@ -17,9 +17,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 @Component
 public class LlmAdapter implements LlmPort {
+
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(LlmAdapter.class);
 
     private final RestTemplate restTemplate;
     private final PromptManager promptManager;
@@ -109,7 +114,7 @@ public class LlmAdapter implements LlmPort {
                 }
             }
         } catch (Exception e) {
-            System.err.println("Exception while calling LLM API: " + e.getMessage());
+            log.error("Exception while calling LLM API: {}", e.getMessage(), e);
         }
         return Collections.emptyList();
     }

@@ -4,9 +4,14 @@ import com.prodash.application.port.in.IngestProposalsUseCase;
 import com.prodash.application.port.in.ScoreProposalsUseCase;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 @Component
 public class ProposalSyncScheduler {
+
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ProposalSyncScheduler.class);
 
     private final IngestProposalsUseCase ingestProposalsUseCase;
     private final ScoreProposalsUseCase scoreProposalsUseCase;
@@ -22,7 +27,7 @@ public class ProposalSyncScheduler {
      */
     @Scheduled(initialDelay = 5000, fixedRate = 43200000) // 5 seconds, then every 12 hours
     public void triggerIngestion() {
-        System.out.println("SCHEDULER: Triggering proposal ingestion.");
+        log.info("SCHEDULER: Triggering proposal ingestion.");
         ingestProposalsUseCase.ingestProposals();
     }
 
@@ -32,7 +37,7 @@ public class ProposalSyncScheduler {
      */
     @Scheduled(initialDelay = 30000, fixedRate = 1800000) // 30 seconds, then every 30 minutes
     public void triggerScoring() {
-        System.out.println("SCHEDULER: Triggering proposal scoring.");
+        log.info("SCHEDULER: Triggering proposal scoring.");
         scoreProposalsUseCase.scoreProposals();
     }
 }
