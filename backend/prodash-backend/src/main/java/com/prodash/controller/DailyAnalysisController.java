@@ -5,6 +5,7 @@ import com.prodash.service.JournalService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -35,5 +36,20 @@ public class DailyAnalysisController {
     public ResponseEntity<String> createTodaysJournal() {
         new Thread(() -> journalService.createDailyJournal()).start();
         return ResponseEntity.ok("Job triggered to create today's journal. Check logs for progress.");
+    }
+
+    /**
+     * [NEW] Triggers the LLM analysis to assign a numerical impact score (0-100)
+     * to a batch of unprocessed proposals.
+     */
+    @PostMapping("/analyze-impact-score")
+    public ResponseEntity<String> analyzeImpactScores(
+            @RequestParam(defaultValue = "50") int limit) {
+
+        new Thread(() -> dailyAnalysisService.analyzeProposalImpactScores(limit)).start();
+
+        String message = String.format(
+                "Job triggered to analyze impact scores for up to %d proposals. Check logs for progress.", limit);
+        return ResponseEntity.ok(message);
     }
 }

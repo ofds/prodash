@@ -16,13 +16,23 @@ public class Proposal {
     private int numero;
     private int ano;
     private String ementa;
-    private String justificativa; // [NEW] To store the full justification
-    private String statusDescricao; // [NEW] To store the current status
+
+    // --- Fields added in the previous step ---
+    private String justificativa;
+    private String statusDescricao;
+
+    // --- NEW FIELDS TO STORE MORE DETAILS ---
+    private String dataApresentacao;
+    private String descricaoTipo;
+    private String urlInteiroTeor; // URL to the full text
+    private String uriAutores; // URI to the list of authors
 
     // --- AI-Generated Fields ---
     private String summaryLLM;
     private String categoryLLM;
     private String impactoLLM;
+    private Integer impactoScoreLLM;
+    private String impactoJustificativaLLM;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

@@ -2,6 +2,7 @@ package com.prodash.service;
 
 import com.prodash.dto.ProposalFilterDTO;
 import com.prodash.dto.camara.ProposalDTO;
+import com.prodash.dto.camara.ProposalDetailsDTO;
 import com.prodash.dto.llm.LlmResult;
 import com.prodash.model.Proposal;
 import com.prodash.repository.ProposalRepository;
@@ -28,7 +29,8 @@ public class ProposalService {
     private final LlmService llmService;
     private static final int BATCH_SIZE = 10;
 
-    public ProposalService(ProposalRepository proposalRepository, CamaraApiService camaraApiService, LlmService llmService) {
+    public ProposalService(ProposalRepository proposalRepository, CamaraApiService camaraApiService,
+            LlmService llmService) {
         this.proposalRepository = proposalRepository;
         this.camaraApiService = camaraApiService;
         this.llmService = llmService;
@@ -39,13 +41,14 @@ public class ProposalService {
     // ===================================================================
 
     /**
-     * [NEW] Ingests proposals from the last few days. Called by the daily scheduler.
+     * [NEW] Ingests proposals from the last few days. Called by the daily
+     * scheduler.
      */
     public void ingestRecentProposals() {
         logger.info("Starting scheduled job: Ingesting recent proposal data...");
         ProposalFilterDTO recentProposalsFilter = new ProposalFilterDTO();
         recentProposalsFilter.setDataApresentacaoInicio(LocalDate.now().minusDays(3));
-        
+
         List<ProposalDTO> proposalsDTOs = camaraApiService.fetchProposalsByFilter(recentProposalsFilter);
         ingestRawProposals(proposalsDTOs);
         logger.info("Finished scheduled job: Ingesting recent proposal data.");
@@ -73,21 +76,35 @@ public class ProposalService {
         List<Proposal> newProposals = new ArrayList<>();
         for (ProposalDTO dto : proposalsDTOs) {
             if (proposalRepository.findByOriginalId(dto.getId()).isEmpty()) {
-                Proposal newProposal = new Proposal();
-                newProposal.setOriginalId(dto.getId());
-                newProposal.setSiglaTipo(dto.getSiglaTipo());
-                newProposal.setNumero(dto.getNumero());
-                newProposal.setAno(dto.getAno());
-                newProposal.setEmenta(dto.getEmenta());
-                newProposal.setCreatedAt(LocalDateTime.now());
-                newProposal.setUpdatedAt(LocalDateTime.now());
-                newProposals.add(newProposal);
+                ProposalDetailsDTO details = camaraApiService.fetchProposalDetails(dto.getId());
+                if (details != null) {
+                    Proposal newProposal = new Proposal();
+                    newProposal.setOriginalId(details.getId());
+                    newProposal.setSiglaTipo(details.getSiglaTipo());
+                    newProposal.setNumero(details.getNumero());
+                    newProposal.setAno(details.getAno());
+                    newProposal.setEmenta(details.getEmenta());
+                    newProposal.setJustificativa(details.getJustificativa());
+                    if (details.getStatusProposicao() != null) {
+                        newProposal.setStatusDescricao(details.getStatusProposicao().getDescricaoSituacao());
+                    }
+                    
+                    // --- Set the new detailed fields ---
+                    newProposal.setDataApresentacao(details.getDataApresentacao());
+                    newProposal.setDescricaoTipo(details.getDescricaoTipo());
+                    newProposal.setUrlInteiroTeor(details.getUrlInteiroTeor());
+                    newProposal.setUriAutores(details.getUriAutores());
+                    
+                    newProposal.setCreatedAt(LocalDateTime.now());
+                    newProposal.setUpdatedAt(LocalDateTime.now());
+                    newProposals.add(newProposal);
+                }
             }
         }
-
+    
         if (!newProposals.isEmpty()) {
             proposalRepository.saveAll(newProposals);
-            logger.info("Ingested and saved {} new proposals.", newProposals.size());
+            logger.info("Ingested and saved {} new proposals with full details.", newProposals.size());
         } else {
             logger.info("No new proposals to ingest.");
         }
@@ -106,7 +123,8 @@ public class ProposalService {
             return;
         }
 
-        logger.info("Found {} unanalyzed proposals. Processing in batches of {}.", proposalsToProcess.size(), BATCH_SIZE);
+        logger.info("Found {} unanalyzed proposals. Processing in batches of {}.", proposalsToProcess.size(),
+                BATCH_SIZE);
 
         for (int i = 0; i < proposalsToProcess.size(); i += BATCH_SIZE) {
             int end = Math.min(i + BATCH_SIZE, proposalsToProcess.size());
@@ -131,5 +149,32 @@ public class ProposalService {
 
         proposalRepository.saveAll(proposalsToProcess);
         logger.info("Successfully analyzed and updated {} proposals.", proposalsToProcess.size());
+    }
+
+    /**
+     * [NEW] Fetches and ingests all proposals presented on the current day.
+     * This method fetches the full details for each proposal.
+     */
+    public void ingestTodaysProposals() {
+        logger.info("Starting job: Ingesting proposals for today...");
+
+        // 1. Create a filter for today's date
+        ProposalFilterDTO todayFilter = new ProposalFilterDTO();
+        todayFilter.setDataApresentacaoInicio(LocalDate.now());
+        todayFilter.setDataApresentacaoFim(LocalDate.now());
+
+        // 2. Fetch the list of proposals from the external API
+        List<ProposalDTO> proposalsDTOs = camaraApiService.fetchProposalsByFilter(todayFilter);
+
+        if (proposalsDTOs.isEmpty()) {
+            logger.info("No new proposals found for today.");
+            return;
+        }
+
+        // 3. Use the existing helper method to ingest them (which now gets full
+        // details)
+        ingestRawProposals(proposalsDTOs);
+
+        logger.info("Finished job: Ingesting today's proposals.");
     }
 }

@@ -23,8 +23,8 @@ public class ProposalController {
     private final CamaraApiService camaraApiService;
 
     public ProposalController(ProposalRepository proposalRepository,
-                              ProposalService proposalService,
-                              CamaraApiService camaraApiService) {
+            ProposalService proposalService,
+            CamaraApiService camaraApiService) {
         this.proposalRepository = proposalRepository;
         this.proposalService = proposalService;
         this.camaraApiService = camaraApiService;
@@ -48,26 +48,46 @@ public class ProposalController {
 
     /**
      * [PHASE 1] Triggers a fast, ingestion-only backfill of historical data.
+     * 
      * @param startYear The first year to fetch. Defaults to 2015.
      * @return A confirmation message.
      */
     @PostMapping("/backfill-ingest-only")
     public ResponseEntity<String> triggerIngestionBackfill(@RequestParam(defaultValue = "2015") int startYear) {
         new Thread(() -> proposalService.ingestAllProposals(startYear)).start();
-        String message = String.format("Ingestion-only backfill job triggered for years starting from %d. Check logs for progress.", startYear);
+        String message = String.format(
+                "Ingestion-only backfill job triggered for years starting from %d. Check logs for progress.",
+                startYear);
         return ResponseEntity.ok(message);
     }
 
     /**
      * [PHASE 2] Processes a batch of unanalyzed proposals from the database.
+     * 
      * @param limit The maximum number of proposals to process. Defaults to 100.
      * @return A confirmation message.
      */
     @PostMapping("/process-unanalyzed-batch")
     public ResponseEntity<String> triggerProcessingJob(@RequestParam(defaultValue = "100") int limit) {
-        // This job can also be run in the background if it might take more than a few seconds
+        // This job can also be run in the background if it might take more than a few
+        // seconds
         new Thread(() -> proposalService.processUnanalyzedProposals(limit)).start();
-        String message = String.format("Job triggered to process up to %d unanalyzed proposals. Check logs for progress.", limit);
+        String message = String
+                .format("Job triggered to process up to %d unanalyzed proposals. Check logs for progress.", limit);
+        return ResponseEntity.ok(message);
+    }
+
+    /**
+     * [NEW] Triggers an ingestion job specifically for today's proposals.
+     * This will fetch the proposals and their full details.
+     * 
+     * @return A confirmation message.
+     */
+    @PostMapping("/ingest-today")
+    public ResponseEntity<String> triggerTodaysIngestion() {
+        // Run this in a background thread so the API call returns immediately
+        new Thread(() -> proposalService.ingestTodaysProposals()).start();
+        String message = "Job triggered to ingest all of today's proposals with full details. Check logs for progress.";
         return ResponseEntity.ok(message);
     }
 }

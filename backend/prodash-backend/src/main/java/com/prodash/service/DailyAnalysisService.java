@@ -8,7 +8,12 @@ import com.prodash.model.Proposal;
 import com.prodash.repository.ProposalRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.domain.PageRequest;
+
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -21,15 +26,17 @@ import java.util.stream.Collectors;
 public class DailyAnalysisService {
 
     private static final Logger logger = LoggerFactory.getLogger(DailyAnalysisService.class);
+    private final MongoTemplate mongoTemplate;
     private final ProposalRepository proposalRepository;
     private final CamaraApiService camaraApiService;
     private final LlmService llmService;
     private static final int BATCH_SIZE = 10;
 
-    public DailyAnalysisService(ProposalRepository proposalRepository, CamaraApiService camaraApiService, LlmService llmService) {
+    public DailyAnalysisService(ProposalRepository proposalRepository, CamaraApiService camaraApiService, LlmService llmService, MongoTemplate mongoTemplate) {
         this.proposalRepository = proposalRepository;
         this.camaraApiService = camaraApiService;
         this.llmService = llmService;
+        this.mongoTemplate = mongoTemplate;
     }
 
     public void analyzeTodaysProposals() {
@@ -99,4 +106,59 @@ public class DailyAnalysisService {
         proposalRepository.saveAll(newProposals);
         logger.info("Successfully analyzed and saved {} new proposals from today.", newProposals.size());
     }
+    /**
+ * [NEW] Analyzes a batch of proposals to assign a numerical impact score.
+ * @param limit The maximum number of proposals to process.
+ */
+public void analyzeProposalImpactScores(int limit) {
+    logger.info("--- Starting On-Demand Job: Impact Score Analysis for {} proposals ---", limit);
+
+    // Find proposals where the impact score has not yet been set
+    Query query = new Query(Criteria.where("impactoScoreLLM").isNull());
+    query.limit(limit);
+    List<Proposal> proposalsToAnalyze = mongoTemplate.find(query, Proposal.class);
+
+    if (proposalsToAnalyze.isEmpty()) {
+        logger.info("No proposals found needing an impact score analysis.");
+        return;
+    }
+
+    logger.info("Found {} proposals to analyze for impact score.", proposalsToAnalyze.size());
+
+    // Process in batches
+    for (int i = 0; i < proposalsToAnalyze.size(); i += BATCH_SIZE) {
+        int end = Math.min(i + BATCH_SIZE, proposalsToAnalyze.size());
+        List<Proposal> batch = proposalsToAnalyze.subList(i, end);
+
+        List<LlmResult> llmResults = llmService.processBatch(batch, "proposal_impact_score_v1");
+        
+        if (llmResults.size() == batch.size()) {
+            for (int j = 0; j < batch.size(); j++) {
+                Proposal proposal = batch.get(j);
+                LlmResult result = llmResults.get(j);
+
+                if (result != null && result.getImpactoScore() != null) {
+                    proposal.setImpactoScoreLLM(result.getImpactoScore());
+                    // [NEW] Set the justification as well.
+                    proposal.setImpactoJustificativaLLM(result.getJustificativa());
+                } else {
+                    proposal.setImpactoScoreLLM(-1); 
+                    // [NEW] Add a default justification for failed cases.
+                    proposal.setImpactoJustificativaLLM("Análise de IA falhou.");
+                }
+                proposal.setUpdatedAt(LocalDateTime.now());
+            }
+        } else {
+            logger.error("LLM result count ({}) does not match batch size ({}). Marking batch as failed.", llmResults.size(), batch.size());
+            for (Proposal proposal : batch) {
+                proposal.setImpactoScoreLLM(-1);
+                proposal.setImpactoJustificativaLLM("Falha na análise em lote.");
+                proposal.setUpdatedAt(LocalDateTime.now());
+            }
+        }
+    }
+
+    proposalRepository.saveAll(proposalsToAnalyze);
+    logger.info("Successfully analyzed and saved impact scores for {} proposals.", proposalsToAnalyze.size());
+}
 }

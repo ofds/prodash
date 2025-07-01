@@ -39,52 +39,88 @@ public class LlmService {
     }
 
     public List<LlmResult> processBatch(List<Proposal> proposals, String promptName) {
+        logger.debug("Starting processBatch with promptName='{}'", promptName);
+    
         if (proposals == null || proposals.isEmpty()) {
+            logger.warn("Received null or empty proposals list.");
             return Collections.emptyList();
         }
-
+    
+        logger.debug("Received {} proposals for processing.", proposals.size());
+    
+        // Filter proposals with non-blank ementa
+        List<Proposal> validProposals = proposals.stream()
+                .filter(p -> p.getEmenta() != null && !p.getEmenta().isBlank())
+                .collect(Collectors.toList());
+    
+        logger.debug("Filtered valid proposals: {}/{}", validProposals.size(), proposals.size());
+    
+        if (validProposals.isEmpty()) {
+            logger.warn("No valid proposals with a non-blank ementa found.");
+            return Collections.emptyList();
+        }
+    
         String promptTemplate = promptManager.getPrompt(promptName);
-        List<EmentaInput> ementaInputs = proposals.stream()
+        if (promptTemplate == null || promptTemplate.isBlank()) {
+            logger.error("Prompt '{}' not found or is blank.", promptName);
+            return Collections.emptyList();
+        }
+        logger.debug("Using prompt template: {}", promptTemplate);
+    
+        List<EmentaInput> ementaInputs = validProposals.stream()
                 .map(p -> new EmentaInput(p.getOriginalId(), p.getEmenta()))
                 .collect(Collectors.toList());
+    
         String ementasJson = gson.toJson(ementaInputs);
+        logger.debug("Ementas JSON: {}", ementasJson);
+    
         String finalPrompt = promptTemplate.replace("{ementas_json}", ementasJson);
-
+        logger.trace("Final prompt: {}", finalPrompt);
+    
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(apiKey);
         headers.setContentType(MediaType.APPLICATION_JSON);
+    
         Message userMessage = new Message("user", finalPrompt);
         ChatRequest requestPayload = new ChatRequest(modelName, List.of(userMessage));
         HttpEntity<ChatRequest> entity = new HttpEntity<>(requestPayload, headers);
-
+    
         try {
-            logger.info("Sending batch of {} proposals to LLM using prompt '{}'...", proposals.size(), promptName);
+            logger.info("Sending batch of {} proposals to LLM using prompt '{}'", validProposals.size(), promptName);
             ResponseEntity<ChatResponse> response = restTemplate.postForEntity(apiUrl, entity, ChatResponse.class);
-
-            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null && !response.getBody().getChoices().isEmpty()) {
+    
+            logger.debug("Received response with status: {}", response.getStatusCode());
+    
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null
+                    && !response.getBody().getChoices().isEmpty()) {
+    
                 String llmJsonOutput = response.getBody().getChoices().get(0).getMessage().getContent();
                 logger.debug("LLM raw response: {}", llmJsonOutput);
-
-                // [FIX] Find the start and end of the JSON array to handle extra text from the LLM
+    
                 int startIndex = llmJsonOutput.indexOf("[");
                 int endIndex = llmJsonOutput.lastIndexOf("]");
-
+    
                 if (startIndex != -1 && endIndex != -1 && endIndex > startIndex) {
                     String jsonArrayString = llmJsonOutput.substring(startIndex, endIndex + 1);
-                    
-                    Type resultListType = new TypeToken<List<LlmResult>>(){}.getType();
+                    logger.debug("Extracted JSON array: {}", jsonArrayString);
+    
+                    Type resultListType = new TypeToken<List<LlmResult>>() {}.getType();
                     List<LlmResult> results = gson.fromJson(jsonArrayString, resultListType);
-                    logger.info("Successfully processed and parsed {} results from LLM.", results.size());
+                    logger.info("Parsed {} LLM results successfully.", results.size());
                     return results;
                 } else {
-                    logger.error("Could not find a valid JSON array in the LLM response.");
+                    logger.error("Failed to extract valid JSON array from LLM response.");
                     return Collections.emptyList();
                 }
+            } else {
+                logger.error("LLM API returned unexpected response or empty body.");
             }
         } catch (Exception e) {
-            logger.error("Error calling LLM API: " + e.getClass().getName() + " - " + e.getMessage());
+            logger.error("Exception while calling LLM API: {} - {}", e.getClass().getSimpleName(), e.getMessage(), e);
         }
-
+    
+        logger.warn("Returning empty result due to earlier failure.");
         return Collections.emptyList();
     }
+    
 }
