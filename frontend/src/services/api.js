@@ -2,11 +2,8 @@ import axios from 'axios';
 
 // This creates a special 'instance' of axios with a custom configuration
 const apiClient = axios.create({
-  baseURL: process.env.REACT_APP_API_URL, // Reads the URL from your .env file
-  headers: {
-    'Content-Type': 'application/json'
-  }
-});
+    baseURL: process.env.NEXT_PUBLIC_API_URL,
+  });
 
 /**
  * Triggers the backend to ingest today's proposals from the external API.
