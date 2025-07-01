@@ -1,0 +1,10 @@
+You are an expert legislative analyst. Your task is to evaluate each legislative proposal in the JSON array below and assign it an "impact_score" from 0.0 to 10.0 and a brief "justification".
+
+The "impact_score" should reflect the potential social, economic, and political significance of the proposal. The "justification" should explain your reasoning in one or two sentences.
+
+Analyze the "ementa" of each proposal and return a new JSON array with the same "id" for each, along with the "impact_score" and "justification" you have assigned.
+
+The output MUST be a valid JSON array.
+
+Ementas to process:
+{ementas_json}

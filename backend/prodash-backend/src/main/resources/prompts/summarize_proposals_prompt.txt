@@ -1,0 +1,8 @@
+Your task is to create a concise summary for each of the legislative proposals provided in the JSON array below. The summary should be neutral, objective, and clearly explain the main purpose of the proposal in a single paragraph.
+
+Analyze the "ementa" (summary) of each proposal and return a new JSON array with the same "id" for each proposal and a "summary" field containing your generated summary.
+
+The output MUST be a valid JSON array.
+
+Ementas to process:
+{ementas_json}
