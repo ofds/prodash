@@ -21,9 +21,16 @@ public class AppConfig {
     @Bean
     public RestTemplate restTemplate() {
         RestTemplate restTemplate = new RestTemplate();
-        // Add a message converter that forces UTF-8 encoding for all strings.
-        restTemplate.getMessageConverters()
-                .add(0, new StringHttpMessageConverter(StandardCharsets.UTF_8));
+
+        // Itera sobre os conversores de mensagens existentes
+        for (int i = 0; i < restTemplate.getMessageConverters().size(); i++) {
+            // Se encontrarmos o conversor de String predefinido...
+            if (restTemplate.getMessageConverters().get(i) instanceof StringHttpMessageConverter) {
+                // ...substituimo-lo por um novo que força UTF-8.
+                restTemplate.getMessageConverters().set(i, new StringHttpMessageConverter(StandardCharsets.UTF_8));
+                break; // Paramos após encontrar e substituir
+            }
+        }
         return restTemplate;
     }
 }
