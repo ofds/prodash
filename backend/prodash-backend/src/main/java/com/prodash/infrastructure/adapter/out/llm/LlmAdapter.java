@@ -1,14 +1,18 @@
 package com.prodash.infrastructure.adapter.out.llm;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import com.prodash.application.port.out.LlmPort;
 import com.prodash.domain.model.Proposal;
 import com.prodash.infrastructure.adapter.out.llm.dto.*;
 import com.prodash.infrastructure.config.PromptManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.lang.reflect.Type;
@@ -17,14 +21,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
 
 @Component
 public class LlmAdapter implements LlmPort {
 
-    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(LlmAdapter.class);
+    private static final Logger log = LoggerFactory.getLogger(LlmAdapter.class);
 
     private final RestTemplate restTemplate;
     private final PromptManager promptManager;
@@ -47,7 +48,8 @@ public class LlmAdapter implements LlmPort {
     @Override
     public List<Proposal> summarizeProposals(List<Proposal> proposals) {
         List<LlmResult> llmResults = processBatch(proposals, "summarize_proposals_prompt");
-        Map<String, LlmResult> resultMap = llmResults.stream().collect(Collectors.toMap(LlmResult::getId, Function.identity()));
+        Map<String, LlmResult> resultMap = llmResults.stream()
+                .collect(Collectors.toMap(LlmResult::getId, Function.identity()));
         
         proposals.forEach(p -> {
             LlmResult result = resultMap.get(p.getId());
@@ -61,7 +63,8 @@ public class LlmAdapter implements LlmPort {
     @Override
     public List<Proposal> scoreProposals(List<Proposal> proposals) {
         List<LlmResult> llmResults = processBatch(proposals, "impact_score_prompt");
-        Map<String, LlmResult> resultMap = llmResults.stream().collect(Collectors.toMap(LlmResult::getId, Function.identity()));
+        Map<String, LlmResult> resultMap = llmResults.stream()
+                .collect(Collectors.toMap(LlmResult::getId, Function.identity()));
 
         proposals.forEach(p -> {
             LlmResult result = resultMap.get(p.getId());
@@ -74,13 +77,18 @@ public class LlmAdapter implements LlmPort {
     }
 
     private List<LlmResult> processBatch(List<Proposal> proposals, String promptName) {
-        if (proposals == null || proposals.isEmpty()) return Collections.emptyList();
+        if (proposals == null || proposals.isEmpty()) {
+            return Collections.emptyList();
+        }
 
+        // Use summary as input for the LLM
         List<Proposal> validProposals = proposals.stream()
-                .filter(p -> p.getSummary() != null && !p.getSummary().isBlank()) // Use summary as input
+                .filter(p -> p.getSummary() != null && !p.getSummary().isBlank())
                 .collect(Collectors.toList());
 
-        if (validProposals.isEmpty()) return Collections.emptyList();
+        if (validProposals.isEmpty()) {
+            return Collections.emptyList();
+        }
 
         String promptTemplate = promptManager.getPrompt(promptName);
         List<EmentaInput> ementaInputs = validProposals.stream()
@@ -102,18 +110,19 @@ public class LlmAdapter implements LlmPort {
             ResponseEntity<ChatResponse> response = restTemplate.postForEntity(apiUrl, entity, ChatResponse.class);
 
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null && !response.getBody().getChoices().isEmpty()) {
+                // Directly get the content which is expected to be a JSON array string
                 String llmJsonOutput = response.getBody().getChoices().get(0).getMessage().getContent();
                 
-                int startIndex = llmJsonOutput.indexOf("[");
-                int endIndex = llmJsonOutput.lastIndexOf("]");
-
-                if (startIndex != -1 && endIndex != -1 && endIndex > startIndex) {
-                    String jsonArrayString = llmJsonOutput.substring(startIndex, endIndex + 1);
+                // **REFACTORED SECTION**: Removed fragile string manipulation.
+                // Directly parse the JSON string into the target list type.
+                if (llmJsonOutput != null && !llmJsonOutput.isBlank()) {
                     Type resultListType = new TypeToken<List<LlmResult>>() {}.getType();
-                    return gson.fromJson(jsonArrayString, resultListType);
+                    return gson.fromJson(llmJsonOutput, resultListType);
                 }
             }
-        } catch (Exception e) {
+        } catch (JsonSyntaxException e) {
+            log.error("Failed to parse JSON from LLM response. Content may not be a valid JSON array.", e);
+        } catch (RestClientException e) {
             log.error("Exception while calling LLM API: {}", e.getMessage(), e);
         }
         return Collections.emptyList();

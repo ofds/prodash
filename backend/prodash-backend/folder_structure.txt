@@ -1,0 +1,85 @@
+﻿C:\Users\ofds2\OneDrive\Área de Trabalho\Codigos\prodash\backend\prodash-backend
+|-- src
+|   |-- main
+|   |   |-- java
+|   |   |   |-- com
+|   |   |   |   |-- prodash
+|   |   |   |   |   |-- application
+|   |   |   |   |   |   |-- port
+|   |   |   |   |   |   |   |-- in
+|   |   |   |   |   |   |   |   |-- IngestProposalsUseCase.java
+|   |   |   |   |   |   |   |   |-- ScoreProposalsUseCase.java
+|   |   |   |   |   |   |   |-- out
+|   |   |   |   |   |   |   |   |-- CamaraApiPort.java
+|   |   |   |   |   |   |   |   |-- LlmPort.java
+|   |   |   |   |   |   |   |   |-- ProposalRepositoryPort.java
+|   |   |   |   |   |   |-- service
+|   |   |   |   |   |   |   |-- ProposalIngestionService.java
+|   |   |   |   |   |   |   |-- ProposalScoringService.java
+|   |   |   |   |   |-- domain
+|   |   |   |   |   |   |-- model
+|   |   |   |   |   |   |   |-- Proposal.java
+|   |   |   |   |   |   |-- service
+|   |   |   |   |   |   |   |-- ProposalValidator.java
+|   |   |   |   |   |-- infrastructure
+|   |   |   |   |   |   |-- adapter
+|   |   |   |   |   |   |   |-- in
+|   |   |   |   |   |   |   |   |-- scheduler
+|   |   |   |   |   |   |   |   |   |-- ProposalSyncScheduler.java
+|   |   |   |   |   |   |   |   |-- web
+|   |   |   |   |   |   |   |   |   |-- ProposalController.java
+|   |   |   |   |   |   |   |-- out
+|   |   |   |   |   |   |   |   |-- camara
+|   |   |   |   |   |   |   |   |   |-- dto
+|   |   |   |   |   |   |   |   |   |   |-- CamaraProposalDTO.java
+|   |   |   |   |   |   |   |   |   |-- CamaraApiAdapter.java
+|   |   |   |   |   |   |   |   |-- llm
+|   |   |   |   |   |   |   |   |   |-- dto
+|   |   |   |   |   |   |   |   |   |   |-- ChatRequest.java
+|   |   |   |   |   |   |   |   |   |   |-- ChatResponse.java
+|   |   |   |   |   |   |   |   |   |   |-- EmentaInput.java
+|   |   |   |   |   |   |   |   |   |   |-- LlmRequest.java
+|   |   |   |   |   |   |   |   |   |   |-- LlmResponse.java
+|   |   |   |   |   |   |   |   |   |   |-- LlmResult.java
+|   |   |   |   |   |   |   |   |   |   |-- Message.java
+|   |   |   |   |   |   |   |   |   |-- LlmAdapter.java
+|   |   |   |   |   |   |   |   |-- persistence
+|   |   |   |   |   |   |   |   |   |-- ProposalDocument.java
+|   |   |   |   |   |   |   |   |   |-- ProposalMapper.java
+|   |   |   |   |   |   |   |   |   |-- ProposalMongoRepository.java
+|   |   |   |   |   |   |   |   |   |-- ProposalRepositoryAdapter.java
+|   |   |   |   |   |   |-- config
+|   |   |   |   |   |   |   |-- AppConfig.java
+|   |   |   |   |   |   |   |-- PromptManager.java
+|   |   |   |   |   |-- ProdashBackendApplication.java
+|   |   |-- resources
+|   |   |   |-- prompts
+|   |   |   |   |-- batch_summary_v1.txt
+|   |   |   |   |-- daily_journal_v1.txt
+|   |   |   |   |-- impact_score_prompt.txt
+|   |   |   |   |-- proposal_analysis_v1.txt
+|   |   |   |   |-- proposal_impact_score_v1.txt
+|   |   |   |   |-- summarize_proposals_prompt.txt
+|   |   |   |-- static
+|   |   |   |-- templates
+|   |   |   |-- application.properties
+|   |   |   |-- logback.xml
+|   |-- test
+|   |   |-- java
+|   |   |   |-- com
+|   |   |   |   |-- prodash
+|   |   |   |   |   |-- application
+|   |   |   |   |   |   |-- service
+|   |   |   |   |   |   |   |-- ProposalIngestionServiceTest.java
+|   |   |   |   |   |   |   |-- ProposalScoringServiceTest.java
+|   |   |   |   |   |-- domain
+|   |   |   |   |   |   |-- service
+|   |   |   |   |   |   |   |-- ProposalValidatorTest.java
+|   |   |   |   |   |-- ProdashBackendApplicationTests.java
+|-- .gitattributes
+|-- .gitignore
+|-- HELP.md
+|-- mvnw
+|-- mvnw.cmd
+|-- pom.xml
+|-- printFolderStructure.ps1
