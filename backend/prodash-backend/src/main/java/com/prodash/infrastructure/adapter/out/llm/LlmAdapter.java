@@ -31,7 +31,6 @@ import java.util.ArrayList;
 public class LlmAdapter implements LlmPort {
 
     private static final Logger log = LoggerFactory.getLogger(LlmAdapter.class);
-    private static final int BATCH_SIZE = 10;
 
     private final RestTemplate restTemplate;
     private final PromptManager promptManager;
@@ -53,11 +52,10 @@ public class LlmAdapter implements LlmPort {
 
     @Override
     public List<Proposal> summarizeProposals(List<Proposal> proposals) {
-        List<LlmResult> allResults = processInBatches(proposals, "summarize_proposals_prompt");
+        List<LlmResult> allResults = processSingleBatch(proposals, "summarize_proposals_prompt");
         Map<String, LlmResult> resultMap = createValidatedResultMap(allResults);
         
         proposals.forEach(p -> {
-            // Use the proposal's own ID for lookup, as correlation is handled internally
             LlmResult result = resultMap.get(p.getId());
             if (result != null && result.getSummary() != null) {
                 p.setSummary(result.getSummary());
@@ -68,7 +66,7 @@ public class LlmAdapter implements LlmPort {
 
     @Override
     public List<Proposal> scoreProposals(List<Proposal> proposals) {
-        List<LlmResult> allResults = processInBatches(proposals, "impact_score_prompt");
+        List<LlmResult> allResults = processSingleBatch(proposals, "impact_score_prompt");
         Map<String, LlmResult> resultMap = createValidatedResultMap(allResults);
 
         proposals.forEach(p -> {
@@ -79,18 +77,6 @@ public class LlmAdapter implements LlmPort {
             }
         });
         return proposals;
-    }
-
-    private List<LlmResult> processInBatches(List<Proposal> proposals, String promptName) {
-        if (proposals == null || proposals.isEmpty()) {
-            return Collections.emptyList();
-        }
-        List<List<Proposal>> batches = Lists.partition(proposals, BATCH_SIZE);
-        log.info("Processing {} proposals in {} batches of up to {} each.", proposals.size(), batches.size(), BATCH_SIZE);
-
-        return batches.stream()
-                .flatMap(batch -> processSingleBatch(batch, promptName).stream())
-                .collect(Collectors.toList());
     }
 
     private List<LlmResult> processSingleBatch(List<Proposal> proposalBatch, String promptName) {
@@ -104,11 +90,9 @@ public class LlmAdapter implements LlmPort {
             return Collections.emptyList();
         }
 
-        // Generate correlation IDs and map them to proposals for this batch
         Map<String, String> correlationIdToProposalId = validProposals.stream()
                 .collect(Collectors.toMap(p -> UUID.randomUUID().toString(), Proposal::getId));
         
-        // Create a reverse map to find the original proposal from the correlation ID
         Map<String, Proposal> proposalIdToProposal = validProposals.stream()
                 .collect(Collectors.toMap(Proposal::getId, Function.identity()));
 
@@ -146,11 +130,9 @@ public class LlmAdapter implements LlmPort {
                     Type resultListType = new TypeToken<List<LlmResult>>() {}.getType();
                     List<LlmResult> results = gson.fromJson(jsonArrayString, resultListType);
                     
-                    // Use the correlation ID to ensure we are using the correct original proposal ID
                     results.forEach(r -> {
                         String originalId = correlationIdToProposalId.get(r.getCorrelationId());
                         if(originalId != null) {
-                            // This is a bit of a hack, but it ensures the ID is correct
                              try {
                                 java.lang.reflect.Field idField = LlmResult.class.getDeclaredField("id");
                                 idField.setAccessible(true);
@@ -174,7 +156,6 @@ public class LlmAdapter implements LlmPort {
             return Collections.emptyMap();
         }
 
-        // Prevent duplicates before creating the map to avoid exceptions
         Set<String> seenIds = new HashSet<>();
         List<LlmResult> distinctResults = new ArrayList<>();
         for (LlmResult result : llmResults) {
