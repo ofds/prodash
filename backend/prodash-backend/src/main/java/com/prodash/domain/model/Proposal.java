@@ -7,6 +7,7 @@ public class Proposal {
     private String id;
     private String title;
     private String summary;
+    private String ementa; // New field
     private String fullTextUrl;
     private String status;
     private LocalDate presentationDate;
@@ -17,10 +18,11 @@ public class Proposal {
     public Proposal() {
     }
 
-    public Proposal(String id, String title, String summary, String fullTextUrl, String status, LocalDate presentationDate, Double impactScore, String justification) {
+    public Proposal(String id, String title, String summary, String ementa, String fullTextUrl, String status, LocalDate presentationDate, Double impactScore, String justification) {
         this.id = id;
         this.title = title;
         this.summary = summary;
+        this.ementa = ementa; // Initialize new field
         this.fullTextUrl = fullTextUrl;
         this.status = status;
         this.presentationDate = presentationDate;
@@ -51,6 +53,14 @@ public class Proposal {
 
     public void setSummary(String summary) {
         this.summary = summary;
+    }
+
+    public String getEmenta() {
+        return ementa;
+    }
+
+    public void setEmenta(String ementa) {
+        this.ementa = ementa;
     }
 
     public String getFullTextUrl() {
@@ -100,6 +110,7 @@ public class Proposal {
                 "id='" + id + '\'' +
                 ", title='" + title + '\'' +
                 ", summary='" + summary + '\'' +
+                ", ementa='" + ementa + '\'' +
                 ", fullTextUrl='" + fullTextUrl + '\'' +
                 ", status='" + status + '\'' +
                 ", presentationDate=" + presentationDate +

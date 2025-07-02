@@ -106,6 +106,7 @@ public class CamaraApiAdapter implements CamaraApiPort {
         Proposal proposal = new Proposal();
         proposal.setId(dto.getId());
         proposal.setTitle(dto.getTitle());
+        proposal.setEmenta(dto.getEmenta());
         proposal.setSummary(dto.getEmenta());
         proposal.setFullTextUrl(dto.getUrlInteiroTeor());
         return proposal;
