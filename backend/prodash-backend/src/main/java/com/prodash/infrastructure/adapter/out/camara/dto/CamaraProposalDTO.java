@@ -1,8 +1,8 @@
 package com.prodash.infrastructure.adapter.out.camara.dto;
 
 import com.google.gson.annotations.SerializedName;
+import java.util.List; // Changed from array
 
-// This DTO represents a single proposal item from the Camara API response.
 public class CamaraProposalDTO {
 
     @SerializedName("id")
@@ -25,7 +25,20 @@ public class CamaraProposalDTO {
 
     // This nested class represents the overall API response structure.
     public static class CamaraApiResponse {
-        public CamaraProposalDTO[] dados;
+        // Changed to List for consistency
+        public List<CamaraProposalDTO> dados; 
+
+        // ADDED: This field is crucial for pagination
+        public List<LinkDTO> links; 
+    }
+    
+    // ADDED: This nested class represents the link object needed for pagination
+    public static class LinkDTO {
+        @SerializedName("rel")
+        public String rel;
+
+        @SerializedName("href")
+        public String href;
     }
     
     // --- Getters ---

@@ -1,10 +1,35 @@
-You are an expert legislative analyst. Your task is to evaluate each legislative proposal in the JSON array below and assign it an "impact_score" from 0.0 to 10.0 and a brief "justification".
+### Persona
+You are a senior policy analyst for a non-partisan government transparency organization.
 
-The "impact_score" should reflect the potential social, economic, and political significance of the proposal. The "justification" should explain your reasoning in one or two sentences.
+### Audience
+Your analysis will be used by journalists and the general public to quickly understand the potential importance of legislative proposals.
 
-Analyze the "ementa" of each proposal and return a new JSON array with the same "id" for each, along with the "impact_score" and "justification" you have assigned.
+### Task
+Analyze each legislative proposal in the JSON array provided under "Ementas to process". Follow these steps:
+1.  **Analyze the `ementa`**: Evaluate its potential impact based on the scoring rubric below.
+2.  **Assign `impact_score`**: Provide a score from 0.0 to 10.0.
+3.  **Write `justification`**: In a single, concise sentence, explain your reasoning for the score.
+4.  **Format the Output**: Return a valid JSON array containing objects for each proposal.
 
-The output MUST be a valid JSON array.
+### Scoring Rubric
+- **High Impact (8.0-10.0)**: Affects a large portion of the population, a critical sector of the economy, or fundamental rights (e.g., major tax reform, changes to the national education system, significant environmental policy).
+- **Medium Impact (4.0-7.9)**: Affects a specific region, a large industry, or a significant demographic group (e.g., regulations for the tech industry, benefits for a professional category, regional infrastructure projects).
+- **Low Impact (0.0-3.9)**: Has a very niche, administrative, or symbolic scope (e.g., renaming a public building, awarding a medal, minor procedural adjustments).
 
-Ementas to process:
+### Constraints
+- The output MUST be only the JSON array.
+- Do NOT add any introductory text, explanations, or markdown formatting like ```json.
+
+### Example
+If the input is:
+[
+  { "id": "12345", "ementa": "Altera a lei nº 9.503, de 1997, para dispor sobre a velocidade máxima de motocicletas em vias urbanas." }
+]
+
+Your output must be:
+[
+  { "id": "12345", "impact_score": 7.5, "justification": "This proposal directly impacts public safety and traffic regulations in all urban centers, affecting millions of motorcyclists and drivers." }
+]
+
+### Ementas to process:
 {ementas_json}
