@@ -1,4 +1,3 @@
-// src/main/java/com/prodash/infrastructure/adapter/out/llm/LlmMapper.java
 package com.prodash.infrastructure.adapter.out.llm;
 
 import com.google.gson.Gson;
@@ -26,6 +25,10 @@ public class LlmMapper {
     private static final Logger log = LoggerFactory.getLogger(LlmMapper.class);
     private final Gson gson = new Gson();
     private final PromptManager promptManager;
+    
+    // Use constants for prompt names to avoid typos
+    private static final String SUMMARIZE_PROMPT = "summarize_proposals_prompt";
+    private static final String SCORE_PROMPT = "impact_score_prompt";
 
     public LlmMapper(PromptManager promptManager) {
         this.promptManager = promptManager;
@@ -35,14 +38,34 @@ public class LlmMapper {
      * Creates an LlmApiRequest from a list of proposals and a prompt name.
      */
     public LlmApiRequest toApiRequest(List<Proposal> proposals, String promptName, String modelName) {
-        List<AnalysisPayload> payloads = proposals.stream()
+        
+        // **FIXED LOGIC:** Create payload based on the specific task (summarize vs. score)
+        List<AnalysisPayload> payloads;
+        String placeholder;
+
+        if (SUMMARIZE_PROMPT.equals(promptName)) {
+            // For summarization, use the proposal's 'ementa' as the text to be analyzed.
+            payloads = proposals.stream()
+                .filter(p -> p.getEmenta() != null && !p.getEmenta().isBlank())
+                .map(p -> new AnalysisPayload(p.getId(), p.getEmenta()))
+                .collect(Collectors.toList());
+            placeholder = "{ementas_json}"; // Assumes this is the placeholder in your summarization prompt
+        } else {
+            // For scoring, use the proposal's 'summary' as the text.
+            payloads = proposals.stream()
                 .filter(p -> p.getSummary() != null && !p.getSummary().isBlank())
                 .map(p -> new AnalysisPayload(p.getId(), p.getSummary()))
                 .collect(Collectors.toList());
+            placeholder = "{summaries_json}"; // Use a different placeholder for clarity if needed
+        }
+
+        if (payloads.isEmpty()) {
+            log.warn("No valid proposals found to create a payload for prompt: {}. The list will be empty.", promptName);
+        }
 
         String payloadJson = gson.toJson(payloads);
         String promptTemplate = promptManager.getPrompt(promptName);
-        String finalPrompt = promptTemplate.replace("{ementas_json}", payloadJson);
+        String finalPrompt = promptTemplate.replace(placeholder, payloadJson);
 
         LlmApiRequest.Message userMessage = new LlmApiRequest.Message("user", finalPrompt);
         return new LlmApiRequest(modelName, List.of(userMessage));
@@ -58,17 +81,23 @@ public class LlmMapper {
             return originalProposals;
         }
 
-        Map<String, LlmResult> resultMap = llmResults.stream()
-                .filter(r -> r.getProposalId() != null && !r.getProposalId().isBlank())
-                .collect(Collectors.toMap(LlmResult::getProposalId, Function.identity(), (first, second) -> {
-                    log.warn("Duplicate proposalId found in LLM response: {}. Using the first entry.", first.getProposalId());
-                    return first;
-                }));
+        // Create a map for efficient lookup of original proposals by their ID
+        Map<String, Proposal> originalProposalsMap = originalProposals.stream()
+            .collect(Collectors.toMap(Proposal::getId, Function.identity()));
 
-        originalProposals.forEach(proposal -> {
-            LlmResult result = resultMap.get(proposal.getId());
+        // Map the results from the LLM by their proposal ID
+        Map<String, LlmResult> resultMap = llmResults.stream()
+            .filter(r -> r.getProposalId() != null && !r.getProposalId().isBlank())
+            .collect(Collectors.toMap(LlmResult::getProposalId, Function.identity(), (first, second) -> {
+                log.warn("Duplicate proposalId found in LLM response: {}. Using the first entry.", first.getProposalId());
+                return first;
+            }));
+
+        // Iterate through the original proposals and update them with the corresponding result
+        originalProposalsMap.forEach((id, proposal) -> {
+            LlmResult result = resultMap.get(id);
             if (result != null) {
-                // Update summary if available
+                // Update summary if available in the result
                 if (result.getSummary() != null) {
                     proposal.setSummary(result.getSummary());
                 }
@@ -85,13 +114,14 @@ public class LlmMapper {
 
     private List<LlmResult> parseResultsFromResponse(LlmApiResponse response) {
         if (response == null || response.getChoices() == null || response.getChoices().isEmpty()) {
-            log.warn("LLM response is empty or invalid.");
+            log.warn("LLM response is empty or has no choices.");
             return List.of();
         }
 
         String content = response.getChoices().get(0).getMessage().getContent();
         try {
-            // The LLM often wraps the JSON array in ```json ... ```, so we extract it.
+            // This defensive code attempts to extract a JSON array from the LLM response,
+            // even if it's wrapped in markdown code fences.
             int startIndex = content.indexOf('[');
             int endIndex = content.lastIndexOf(']');
 
@@ -100,7 +130,7 @@ public class LlmMapper {
                 Type resultListType = new TypeToken<List<LlmResult>>() {}.getType();
                 return gson.fromJson(jsonArrayString, resultListType);
             } else {
-                log.error("Could not find a valid JSON array in the LLM response content.");
+                log.error("Could not find a valid JSON array in the LLM response content. Content was: {}", content);
                 return List.of();
             }
         } catch (JsonSyntaxException e) {

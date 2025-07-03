@@ -1,4 +1,3 @@
-// src/main/java/com/prodash/infrastructure/adapter/out/llm/LlmAdapter.java
 package com.prodash.infrastructure.adapter.out.llm;
 
 import com.prodash.application.port.out.LlmPort;
@@ -27,9 +26,9 @@ public class LlmAdapter implements LlmPort {
     private final LlmMapper llmMapper;
     private final BatchSizeManager batchSizeManager;
 
+    // Use constants for prompt names to avoid typos and errors
     private static final String SUMMARIZE_PROMPT = "summarize_proposals_prompt";
     private static final String SCORE_PROMPT = "impact_score_prompt";
-
 
     @Value("${openrouter.api.key}")
     private String apiKey;
@@ -48,28 +47,29 @@ public class LlmAdapter implements LlmPort {
 
     @Override
     public List<Proposal> summarizeProposals(List<Proposal> proposals) {
-        return processBatch(proposals, "summarize_proposals_prompt");
+        // Pass the constant to ensure correctness
+        return processBatch(proposals, SUMMARIZE_PROMPT);
     }
 
     @Override
     public List<Proposal> scoreProposals(List<Proposal> proposals) {
-        return processBatch(proposals, "impact_score_prompt");
+        // Pass the constant to ensure correctness
+        return processBatch(proposals, SCORE_PROMPT);
     }
 
     @Retry(name = "llm-api", fallbackMethod = "processBatchFallback")
     public List<Proposal> processBatch(List<Proposal> proposals, String promptName) {
         log.debug("Attempting to process batch for prompt: {}", promptName);
-        
-        // ** THE FIX IS HERE **
-        // Select the proposals that are valid for the given task.
+
+        // **FIXED LOGIC:** This filter now correctly selects proposals based on the task.
         List<Proposal> validProposals;
         if (SUMMARIZE_PROMPT.equals(promptName)) {
-            // For summarization, we need proposals with an 'ementa' but no 'summary'.
+            // For summarization, find proposals with an 'ementa' but no 'summary'.
             validProposals = proposals.stream()
                 .filter(p -> p.getEmenta() != null && !p.getEmenta().isBlank() && p.getSummary() == null)
                 .collect(Collectors.toList());
         } else {
-            // For scoring, we need proposals that already have a 'summary'.
+            // For scoring, find proposals that already have a 'summary'.
             validProposals = proposals.stream()
                 .filter(p -> p.getSummary() != null && !p.getSummary().isBlank())
                 .collect(Collectors.toList());
@@ -77,7 +77,7 @@ public class LlmAdapter implements LlmPort {
 
         if (validProposals.isEmpty()) {
             log.warn("No valid proposals to process for prompt: {}. Skipping LLM call.", promptName);
-            // Return the original list so that proposals not meant for this step are not lost.
+            // Return the original list to ensure proposals not meant for this step are preserved.
             return proposals;
         }
 
@@ -96,18 +96,17 @@ public class LlmAdapter implements LlmPort {
             throw new HttpClientErrorException(response.getStatusCode(), "LLM API returned non-OK status.");
         }
     }
-    
-    // Fallback method for when all retries fail
+
+    // Fallback method for retries
     public List<Proposal> processBatchFallback(List<Proposal> proposals, String promptName, Throwable t) {
         log.error("All retry attempts failed for prompt: {}. Error: {}", promptName, t.getMessage());
         
         if (t instanceof HttpClientErrorException e && (e.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS || e.getStatusCode().is5xxServerError())) {
-            // CORRECTED: Changed getCurrentBatchSize() to getBatchSize()
             log.warn("API capacity exceeded - reducing batch size.");
             batchSizeManager.decreaseBatchSize();
         }
 
-        // IMPROVED: Re-throw the original exception to ensure the calling service knows about the failure.
+        // Re-throw the original exception to ensure the calling service is aware of the failure.
         throw new RuntimeException("Failed to process batch after multiple retries.", t);
     }
 }
