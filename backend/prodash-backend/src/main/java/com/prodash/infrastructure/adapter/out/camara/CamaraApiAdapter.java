@@ -1,11 +1,11 @@
 package com.prodash.infrastructure.adapter.out.camara;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.prodash.application.port.out.CamaraApiPort;
-import com.prodash.domain.model.Author;
-import com.prodash.domain.model.Proposal;
-import com.prodash.infrastructure.adapter.out.camara.dto.CamaraAuthorDTO;
-import com.prodash.infrastructure.adapter.out.camara.dto.CamaraProposalDTO;
+import com.prodash.domain.model.*;
+import com.prodash.infrastructure.adapter.out.camara.adapter.LocalDateAdapter;
+import com.prodash.infrastructure.adapter.out.camara.dto.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,16 +32,16 @@ public class CamaraApiAdapter implements CamaraApiPort {
     private static final Logger log = LoggerFactory.getLogger(CamaraApiAdapter.class);
     private static final DateTimeFormatter API_DATE_TIME_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
-
     private final RestTemplate restTemplate;
     private final String baseApiUrl;
     private final Executor taskExecutor;
-    private final Gson gson = new Gson();
+    private final Gson gson;
 
-    // DTO for the detail response, which wraps a single proposal DTO
-    private static class CamaraProposalDetailResponse {
-        CamaraProposalDTO dados;
-    }
+    // DTOs para respostas de detalhe que envolvem um único objeto "dados"
+    private static class CamaraProposalDetailResponse { CamaraProposalDTO dados; }
+    private static class CamaraDeputyResponse { CamaraDeputyDTO dados; }
+    private static class CamaraPartyResponse { CamaraPartyDTO dados; }
+
 
     public CamaraApiAdapter(RestTemplate restTemplate,
                             @Value("${camara.api.base-url}") String baseApiUrl,
@@ -49,6 +49,109 @@ public class CamaraApiAdapter implements CamaraApiPort {
         this.restTemplate = restTemplate;
         this.baseApiUrl = baseApiUrl;
         this.taskExecutor = taskExecutor;
+        // Configura o Gson para lidar com LocalDate
+        this.gson = new GsonBuilder()
+            .registerTypeAdapter(LocalDate.class, new LocalDateAdapter())
+            .create();
+    }
+
+    @Override
+    public List<Voting> fetchVotingsForProposal(String proposalId) {
+        String url = buildUrl("/proposicoes/{id}/votacoes", proposalId);
+        log.debug("Fetching votings for proposal id: {}", proposalId);
+        try {
+            String jsonResponse = restTemplate.getForObject(url, String.class);
+            CamaraVotingDTO.CamaraVotingResponse response = gson.fromJson(jsonResponse, CamaraVotingDTO.CamaraVotingResponse.class);
+            if (response != null && response.dados != null) {
+                return response.dados.stream()
+                    .map(dto -> toVotingDomain(dto, proposalId))
+                    .collect(Collectors.toList());
+            }
+            return Collections.emptyList();
+        } catch (RestClientException e) {
+            log.error("Failed to fetch votings for proposal id: {}. Error: {}", proposalId, e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    @Override
+    public List<Vote> fetchVotesForVoting(String votingId) {
+        String url = buildUrl("/votacoes/{id}/votos", votingId);
+        log.debug("Fetching votes for voting id: {}", votingId);
+        try {
+            String jsonResponse = restTemplate.getForObject(url, String.class);
+            CamaraVoteDTO.CamaraVoteResponse response = gson.fromJson(jsonResponse, CamaraVoteDTO.CamaraVoteResponse.class);
+            if (response != null && response.dados != null) {
+                return response.dados.stream()
+                    .map(dto -> toVoteDomain(dto, votingId))
+                    .collect(Collectors.toList());
+            }
+            return Collections.emptyList();
+        } catch (RestClientException e) {
+            log.error("Failed to fetch votes for voting id: {}. Error: {}", votingId, e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    @Override
+    public Optional<Deputy> fetchDeputyDetails(Integer deputyId) {
+        String url = buildUrl("/deputados/{id}", deputyId);
+        log.debug("Fetching details for deputy id: {}", deputyId);
+        try {
+            String jsonResponse = restTemplate.getForObject(url, String.class);
+            CamaraDeputyResponse response = gson.fromJson(jsonResponse, CamaraDeputyResponse.class);
+            if (response != null && response.dados != null) {
+                // Aqui você precisará de uma forma de obter o `partyId`.
+                // Por simplicidade, vamos deixar como 0 por enquanto.
+                // A forma correta seria fazer outra chamada ou ter um cache de partidos.
+                Integer partyId = 0; // Placeholder
+                return Optional.of(toDeputyDomain(response.dados, partyId));
+            }
+            return Optional.empty();
+        } catch (RestClientException e) {
+            log.error("Failed to fetch details for deputy id: {}. Error: {}", deputyId, e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public Optional<Party> fetchPartyDetails(Integer partyId) {
+        String url = buildUrl("/partidos/{id}", partyId);
+        log.debug("Fetching details for party id: {}", partyId);
+        try {
+            String jsonResponse = restTemplate.getForObject(url, String.class);
+            CamaraPartyResponse response = gson.fromJson(jsonResponse, CamaraPartyResponse.class);
+            if (response != null && response.dados != null) {
+                return Optional.of(toPartyDomain(response.dados));
+            }
+            return Optional.empty();
+        } catch (RestClientException e) {
+            log.error("Failed to fetch details for party id: {}. Error: {}", partyId, e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    // --- Métodos Privados e de Mapeamento ---
+
+    private String buildUrl(String path, Object... vars) {
+        return UriComponentsBuilder.fromHttpUrl(this.baseApiUrl).path(path).buildAndExpand(vars).toUriString();
+    }
+    
+    // Mapeadores para os novos domínios
+    private Voting toVotingDomain(CamaraVotingDTO dto, String proposalId) {
+        return new Voting(dto.id, Integer.parseInt(proposalId), dto.data, dto.descricao);
+    }
+
+    private Vote toVoteDomain(CamaraVoteDTO dto, String votingId) {
+        return new Vote(votingId, dto.deputado_.id, dto.tipoVoto);
+    }
+
+    private Deputy toDeputyDomain(CamaraDeputyDTO dto, Integer partyId) {
+        return new Deputy(dto.id, dto.nomeCivil, dto.ultimoStatus.nome, dto.ultimoStatus.siglaUf, partyId);
+    }
+
+    private Party toPartyDomain(CamaraPartyDTO dto) {
+        return new Party(dto.id, dto.sigla, dto.nome);
     }
 
     @Override
@@ -253,10 +356,10 @@ public class CamaraApiAdapter implements CamaraApiPort {
 
         return proposal;
     }
+
+    
     private Author toAuthorDomain(CamaraAuthorDTO dto) {
-        Author author = new Author();
-        author.setName(dto.getNome());
-        author.setType(dto.getTipo());
-        return author;
+        if (dto == null) return null;
+        return new Author(dto.getNome(), dto.getTipo());
     }
 }

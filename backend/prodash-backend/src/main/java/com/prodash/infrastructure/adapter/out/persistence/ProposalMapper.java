@@ -1,7 +1,11 @@
 package com.prodash.infrastructure.adapter.out.persistence;
 
 import com.prodash.domain.model.Proposal;
+import com.prodash.domain.model.Vote;
+import com.prodash.domain.model.Voting;
 import com.prodash.domain.model.Author;
+import com.prodash.domain.model.Deputy;
+import com.prodash.domain.model.Party;
 
 import java.util.Collections;
 import java.util.stream.Collectors;
@@ -76,16 +80,75 @@ public class ProposalMapper {
     private AuthorDocument toAuthorDocument(Author author) {
         if (author == null) return null;
         AuthorDocument doc = new AuthorDocument();
-        doc.setName(author.getName());
-        doc.setType(author.getType());
+        doc.setName(author.name());
+        doc.setType(author.type()); 
+        return doc;
+    }
+    
+    private Author toAuthorDomain(AuthorDocument doc) {
+        if (doc == null) return null;
+        return new Author(doc.getName(), doc.getType());
+    }
+
+    public DeputyDocument toDocument(Deputy domain) {
+        if (domain == null) return null;
+        DeputyDocument doc = new DeputyDocument();
+        doc.setId(domain.id());
+        doc.setNomeCivil(domain.nomeCivil());
+        doc.setNomeParlamentar(domain.nomeParlamentar());
+        doc.setSiglaUf(domain.siglaUf());
+        doc.setPartidoId(domain.partidoId());
         return doc;
     }
 
-    private Author toAuthorDomain(AuthorDocument doc) {
+    public Deputy toDomain(DeputyDocument doc) {
         if (doc == null) return null;
-        Author author = new Author();
-        author.setName(doc.getName());
-        author.setType(doc.getType());
-        return author;
+        return new Deputy(doc.getId(), doc.getNomeCivil(), doc.getNomeParlamentar(), doc.getSiglaUf(), doc.getPartidoId());
+    }
+
+    // Mapeadores para Party
+    public PartyDocument toDocument(Party domain) {
+        if (domain == null) return null;
+        PartyDocument doc = new PartyDocument();
+        doc.setId(domain.id());
+        doc.setSigla(domain.sigla());
+        doc.setNome(domain.nome());
+        return doc;
+    }
+
+    public Party toDomain(PartyDocument doc) {
+        if (doc == null) return null;
+        return new Party(doc.getId(), doc.getSigla(), doc.getNome());
+    }
+
+    // Mapeadores para Voting
+    public VotingDocument toDocument(Voting domain) {
+        if (domain == null) return null;
+        VotingDocument doc = new VotingDocument();
+        doc.setId(domain.id());
+        doc.setProposicaoId(domain.proposicaoId());
+        doc.setData(domain.data());
+        doc.setResumo(domain.resumo());
+        return doc;
+    }
+
+    public Voting toDomain(VotingDocument doc) {
+        if (doc == null) return null;
+        return new Voting(doc.getId(), doc.getProposicaoId(), doc.getData(), doc.getResumo());
+    }
+
+    // Mapeadores para Vote
+    public VoteDocument toDocument(Vote domain) {
+        if (domain == null) return null;
+        VoteDocument doc = new VoteDocument();
+        doc.setVotacaoId(domain.votacaoId());
+        doc.setDeputadoId(domain.deputadoId());
+        doc.setTipoVoto(domain.tipoVoto());
+        return doc;
+    }
+
+    public Vote toDomain(VoteDocument doc) {
+        if (doc == null) return null;
+        return new Vote(doc.getVotacaoId(), doc.getDeputadoId(), doc.getTipoVoto());
     }
 }

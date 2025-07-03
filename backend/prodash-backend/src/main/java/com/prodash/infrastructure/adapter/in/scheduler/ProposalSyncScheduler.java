@@ -1,6 +1,7 @@
 package com.prodash.infrastructure.adapter.in.scheduler;
 
 import com.prodash.application.port.in.FetchProposalsUseCase;
+import com.prodash.application.port.in.FetchVotingsUseCase; // 1. IMPORTAR
 import com.prodash.application.port.in.ScoreProposalsUseCase;
 import com.prodash.application.port.in.SummarizeProposalsUseCase;
 import org.slf4j.Logger;
@@ -16,42 +17,56 @@ public class ProposalSyncScheduler {
     private final FetchProposalsUseCase fetchProposalsUseCase;
     private final SummarizeProposalsUseCase summarizeProposalsUseCase;
     private final ScoreProposalsUseCase scoreProposalsUseCase;
+    private final FetchVotingsUseCase fetchVotingsUseCase; // 2. INJETAR O NOVO USE CASE
 
     public ProposalSyncScheduler(FetchProposalsUseCase fetchProposalsUseCase,
                                  SummarizeProposalsUseCase summarizeProposalsUseCase,
-                                 ScoreProposalsUseCase scoreProposalsUseCase) {
+                                 ScoreProposalsUseCase scoreProposalsUseCase,
+                                 FetchVotingsUseCase fetchVotingsUseCase) { // 3. ATUALIZAR CONSTRUTOR
         this.fetchProposalsUseCase = fetchProposalsUseCase;
         this.summarizeProposalsUseCase = summarizeProposalsUseCase;
         this.scoreProposalsUseCase = scoreProposalsUseCase;
+        this.fetchVotingsUseCase = fetchVotingsUseCase;
     }
 
     /**
      * Triggers the proposal fetching process.
-     * Runs every 12 hours, starting 5 seconds after application startup.
      */
-    @Scheduled(initialDelay = 5000, fixedRateString = "${prodash.scheduler.fetching.rate}") // e.g., 43200000 in properties
+    @Scheduled(initialDelay = 5000, fixedRateString = "${prodash.scheduler.fetching.rate}")
     public void triggerFetching() {
         log.info("SCHEDULER: Triggering proposal fetching.");
         fetchProposalsUseCase.fetchNewProposals();
     }
+    
+    /**
+     * 4. CRIAR NOVO MÉTODO AGENDADO PARA BUSCAR VOTAÇÕES
+     * Triggers the voting data fetching process.
+     * Runs after the initial proposal fetching.
+     */
+    @Scheduled(initialDelay = 60000, fixedRateString = "${prodash.scheduler.voting.rate}") // Ex: 1 minuto de delay
+    public void triggerVotingFetching() {
+        log.info("SCHEDULER: Triggering voting data fetching.");
+        fetchVotingsUseCase.fetchNewVotings();
+    }
+
 
     /**
      * Triggers the proposal summarization process.
-     * Runs every 12 hours, starting 5 minutes after application startup.
      */
-    @Scheduled(initialDelay = 30000, fixedRateString = "${prodash.scheduler.summarizing.rate}") // e.g., 43200000 in properties
+    @Scheduled(initialDelay = 300000, fixedRateString = "${prodash.scheduler.summarizing.rate}") // Aumentado para 5 min
     public void triggerSummarization() {
         log.info("SCHEDULER: Triggering proposal summarization.");
+        // O nome do método no seu use case pode ser diferente, ajuste se necessário
         summarizeProposalsUseCase.summarizeUnsummarizedProposals();
     }
 
     /**
      * Triggers the proposal scoring process.
-     * Runs every 12 hours, starting 10 minutes after application startup.
      */
-    @Scheduled(initialDelay = 60000, fixedRateString = "${prodash.scheduler.scoring.rate}") // e.g., 43200000 in properties
+    @Scheduled(initialDelay = 600000, fixedRateString = "${prodash.scheduler.scoring.rate}") // Aumentado para 10 min
     public void triggerScoring() {
         log.info("SCHEDULER: Triggering proposal scoring.");
+        // O nome do método no seu use case pode ser diferente, ajuste se necessário
         scoreProposalsUseCase.scoreProposals();
     }
 }

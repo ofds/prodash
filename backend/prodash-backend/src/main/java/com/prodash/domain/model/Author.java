@@ -1,12 +1,8 @@
 package com.prodash.domain.model;
 
-public class Author {
-    private String name;
-    private String type;
-
-    // Getters and Setters
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-    public String getType() { return type; }
-    public void setType(String type) { this.type = type; }
-}
+/**
+ * Representa o autor de uma proposição. Imutável.
+ * @param name Nome do autor.
+ * @param type Tipo do autor (e.g., "Deputado(a)").
+ */
+public record Author(String name, String type) {}
