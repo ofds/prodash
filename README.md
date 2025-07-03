@@ -2,29 +2,31 @@
 
 ProposalAI is a powerful backend service designed to autonomously fetch, analyze, and score legislative proposals. Leveraging a modern tech stack and a robust Clean Architecture, this project provides a streamlined way to process and understand complex legislative data using the power of Large Language Models (LLMs).
 
-    
+### Table of Contents
 
-## Table of Contents
+  - [Highlights](https://www.google.com/search?q=%23highlights)
+  - [Architectural Vision](https://www.google.com/search?q=%23architectural-vision)
+  - [How It Works](https://www.google.com/search?q=%23how-it-works)
+  - [Tech Stack](https://www.google.com/search?q=%23tech-stack)
+  - [Installation & Setup](https://www.google.com/search?q=%23installation--setup)
+  - [Usage](https://www.google.com/search?q=%23usage)
+  - [Contributing](https://www.google.com/search?q=%23contributing)
+  - [License](https://www.google.com/search?q=%23license)
+  - [Acknowledgments](https://www.google.com/search?q=%23acknowledgments)
 
-1.  [Highlights](https://www.google.com/search?q=%23highlights)
-2.  [Architectural Vision](https://www.google.com/search?q=%23architectural-vision)
-3.  [How It Works](https://www.google.com/search?q=%23how-it-works)
-4.  [Tech Stack](https://www.google.com/search?q=%23tech-stack)
-5.  [Installation & Setup](https://www.google.com/search?q=%23installation--setup)
-6.  [Usage](https://www.google.com/search?q=%23usage)
-7.  [Contributing](https://www.google.com/search?q=%23contributing)
-8.  [License](https://www.google.com/search?q=%23license)
-9.  [Acknowledgments](https://www.google.com/search?q=%23acknowledgments)
+\<hr\>
 
 ## Highlights
 
-  - **Automated Data Ingestion**: A built-in scheduler automatically fetches the latest legislative proposals from Brazil's official Câmara dos Deputados API.
-  - **AI-Powered Analysis**: Utilizes a Large Language Model (via OpenRouter) to perform two key tasks in efficient batches:
-      - **Summarization**: Generates concise, neutral summaries for complex proposals.
-      - **Impact Scoring**: Assigns a quantitative `impact_score` (0.0-10.0) and a qualitative `justification` to each proposal.
-  - **Clean Architecture**: Refactored for maintainability, testability, and scalability by separating concerns into distinct Domain, Application, and Infrastructure layers.
-  - **RESTful API**: Exposes a simple REST endpoint to retrieve all processed proposals, making it easy to integrate with a frontend or other services.
-  - **Resilient and Scalable**: Built on Spring Boot and MongoDB, ensuring a robust foundation for handling large volumes of data.
+  * **Automated Data Ingestion**: A built-in scheduler automatically fetches the latest legislative proposals from Brazil's official Câmara dos Deputados API.
+  * **AI-Powered Analysis**: Utilizes a Large Language Model (via OpenRouter) to perform two key tasks in efficient batches:
+      * **Summarization**: Generates concise, neutral summaries for complex proposals.
+      * **Impact Scoring**: Assigns a quantitative `impact_score` (0.0-10.0) and a qualitative `justification` to each proposal.
+  * **Clean Architecture**: Refactored for maintainability, testability, and scalability by separating concerns into distinct Domain, Application, and Infrastructure layers.
+  * **RESTful API**: Exposes a simple REST endpoint to retrieve all processed proposals, making it easy to integrate with a frontend or other services.
+  * **Resilient and Scalable**: Built on Spring Boot and MongoDB, ensuring a robust foundation for handling large volumes of data.
+
+\<hr\>
 
 ## Architectural Vision
 
@@ -32,15 +34,17 @@ This project was recently refactored to follow the principles of **Clean Archite
 
 The key benefits of this architecture include:
 
-  - **High Testability**: Each layer can be tested in isolation.
-  - **Framework Independence**: The core logic isn't tied to Spring, allowing for easier upgrades or migrations in the future.
-  - **Maintainability**: A clear separation of concerns makes the codebase easier to understand, modify, and extend.
+  * **High Testability**: Each layer can be tested in isolation.
+  * **Framework Independence**: The core logic isn't tied to Spring, allowing for easier upgrades or migrations in the future.
+  * **Maintainability**: A clear separation of concerns makes the codebase easier to understand, modify, and extend.
 
 The application is structured into three primary layers:
 
-  - `domain`: Contains the core business models and rules.
-  - `application`: Orchestrates the use cases (e.g., ingesting and scoring proposals).
-  - `infrastructure`: Handles all external communication, such as database connections, API calls, and scheduling.
+  * `domain`: Contains the core business models and rules.
+  * `application`: Orchestrates the use cases (e.g., ingesting and scoring proposals).
+  * `infrastructure`: Handles all external communication, such as database connections, API calls, and scheduling.
+
+\<hr\>
 
 ## How It Works
 
@@ -54,18 +58,22 @@ The application is structured into three primary layers:
 8.  This service finds all unscored proposals in the database and sends them in a batch to the `LlmAdapter`, this time using the `impact_score_prompt.txt`.
 9.  The LLM returns an impact score and justification for each, which are then saved to the database.
 
+\<hr\>
+
 ## Tech Stack
 
-  - **Backend**: Spring Boot 3
-  - **Language**: Java 17
-  - **Database**: MongoDB
-  - **Build Tool**: Apache Maven
-  - **Core Libraries**:
-      - Spring Data MongoDB
-      - Spring Web
-      - Spring Scheduler
-  - **LLM Integration**: OpenRouter (configurable for any OpenAI-compatible API)
-  - **Code Quality**: Lombok
+  * **Backend**: Spring Boot 3
+  * **Language**: Java 17
+  * **Database**: MongoDB
+  * **Build Tool**: Apache Maven
+  * **Core Libraries**:
+      * Spring Data MongoDB
+      * Spring Web
+      * Spring Scheduler
+  * **LLM Integration**: OpenRouter (configurable for any OpenAI-compatible API)
+  * **Code Quality**: Lombok
+
+\<hr\>
 
 ## Installation & Setup
 
@@ -73,10 +81,10 @@ Follow these steps to get the project running on your local machine.
 
 ### Prerequisites
 
-  - **Java 17 SDK**
-  - **Apache Maven 3.8+**
-  - **MongoDB** (running on `mongodb://localhost:27017`)
-  - **OpenRouter API Key** (or another compatible LLM provider)
+  * **Java 17 SDK**
+  * **Apache Maven 3.8+**
+  * **MongoDB** (running on `mongodb://localhost:27017`)
+  * **OpenRouter API Key** (or another compatible LLM provider)
 
 ### Step-by-Step Installation
 
@@ -89,8 +97,8 @@ Follow these steps to get the project running on your local machine.
 
 2.  **Configure your API Key:**
 
-      - Open the `src/main/resources/application.properties` file.
-      - Find the `openrouter.api.key` property and replace `YOUR_OPENROUTER_API_KEY` with your actual key.
+      * Open the `src/main/resources/application.properties` file.
+      * Find the `openrouter.api.key` property and replace `YOUR_OPENROUTER_API_KEY` with your actual key.
 
     <!-- end list -->
 
@@ -109,14 +117,16 @@ Follow these steps to get the project running on your local machine.
 
 The application will start, and after a short delay (configured in `ProposalSyncScheduler`), it will begin fetching and processing proposals.
 
+\<hr\>
+
 ## Usage
 
 Once the application is running, you can retrieve the processed proposals by calling the API endpoint.
 
 ### Retrieve All Proposals
 
-  - **URL**: `http://localhost:8080/api/proposals`
-  - **Method**: `GET`
+  * **URL**: `http://localhost:8080/api/proposals`
+  * **Method**: `GET`
 
 **Example using `curl`:**
 
@@ -141,6 +151,8 @@ curl http://localhost:8080/api/proposals
 ]
 ```
 
+\<hr\>
+
 ## Contributing
 
 Contributions are welcome\! If you have suggestions for improvements or find a bug, please follow these steps:
@@ -153,12 +165,16 @@ Contributions are welcome\! If you have suggestions for improvements or find a b
 
 Please ensure your code adheres to the existing style and that all tests pass.
 
+\<hr\>
+
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](https://www.google.com/search?q=LICENSE) file for details.
+This project is licensed under the MIT License. See the LICENSE file for details.
+
+\<hr\>
 
 ## Acknowledgments
 
-  - The **Clean Architecture** principles as described by Robert C. Martin.
-  - The **Spring Boot** team for creating a powerful and easy-to-use framework.
-  - The **OpenRouter** team for providing a flexible gateway to various LLMs.
+  * The **Clean Architecture** principles as described by Robert C. Martin.
+  * The **Spring Boot** team for creating a powerful and easy-to-use framework.
+  * The **OpenRouter** team for providing a flexible gateway to various LLMs.
