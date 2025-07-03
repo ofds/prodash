@@ -1,6 +1,5 @@
 package com.prodash.infrastructure.adapter.out.persistence;
 
-
 import com.prodash.application.port.out.ProposalRepositoryPort;
 import com.prodash.domain.model.Proposal;
 import org.springframework.stereotype.Component;
@@ -40,8 +39,15 @@ public class ProposalRepositoryAdapter implements ProposalRepositoryPort {
     }
 
     @Override
-    public List<Proposal> findByImpactScoreIsNull() {
-        return mongoRepository.findByImpactScoreIsNull().stream()
+    public List<Proposal> findBySummaryIsNull() {
+        return mongoRepository.findBySummaryIsNull().stream()
+                .map(mapper::toDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Proposal> findBySummaryIsNotNullAndImpactScoreIsNull() {
+        return mongoRepository.findBySummaryIsNotNullAndImpactScoreIsNull().stream()
                 .map(mapper::toDomain)
                 .collect(Collectors.toList());
     }

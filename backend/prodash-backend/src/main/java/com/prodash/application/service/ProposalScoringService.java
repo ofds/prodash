@@ -15,7 +15,7 @@ import java.util.List;
 public class ProposalScoringService implements ScoreProposalsUseCase {
 
     private static final Logger log = LoggerFactory.getLogger(ProposalScoringService.class);
-    private static final int BATCH_SIZE = 10; // Added batch size
+    private static final int BATCH_SIZE = 10;
 
     private final ProposalRepositoryPort proposalRepositoryPort;
     private final LlmPort llmPort;
@@ -28,14 +28,15 @@ public class ProposalScoringService implements ScoreProposalsUseCase {
     @Override
     public void scoreProposals() {
         log.info("Starting proposal scoring process...");
-        List<Proposal> unscoredProposals = proposalRepositoryPort.findByImpactScoreIsNull();
+        // Find proposals that are summarized but not yet scored.
+        List<Proposal> unscoredProposals = proposalRepositoryPort.findBySummaryIsNotNullAndImpactScoreIsNull();
 
         if (unscoredProposals.isEmpty()) {
-            log.info("No unscored proposals to process.");
+            log.info("No proposals ready for scoring (summarized but unscored).");
             return;
         }
 
-        log.info("Found {} unscored proposals. Scoring in batches of {}.", unscoredProposals.size(), BATCH_SIZE);
+        log.info("Found {} proposals ready for scoring. Processing in batches of {}.", unscoredProposals.size(), BATCH_SIZE);
 
         // Partition the list into batches
         List<List<Proposal>> batches = Lists.partition(unscoredProposals, BATCH_SIZE);

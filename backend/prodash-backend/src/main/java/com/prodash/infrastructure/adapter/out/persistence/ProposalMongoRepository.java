@@ -9,8 +9,19 @@ import java.util.List;
 public interface ProposalMongoRepository extends MongoRepository<ProposalDocument, String> {
 
     /**
-     * Custom query to find all proposals where the impactScore field is null.
-     * Spring Data MongoDB will automatically implement this method based on its name.
+     * Finds all proposal documents where the summary field is null.
+     * Spring Data MongoDB automatically implements this method based on its name.
+     *
+     * @return A list of proposal documents with a null summary.
      */
-    List<ProposalDocument> findByImpactScoreIsNull();
+    List<ProposalDocument> findBySummaryIsNull();
+
+    /**
+     * Finds all proposal documents where the summary field is not null and the
+     * impactScore field is null. Spring Data MongoDB automatically implements this
+     * method based on its name.
+     *
+     * @return A list of proposal documents with a non-null summary and a null impact score.
+     */
+    List<ProposalDocument> findBySummaryIsNotNullAndImpactScoreIsNull();
 }

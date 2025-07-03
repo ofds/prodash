@@ -11,6 +11,7 @@ public class ProposalMapper {
         doc.setId(domain.getId());
         doc.setTitle(domain.getTitle());
         doc.setSummary(domain.getSummary());
+        doc.setEmenta(domain.getEmenta());
         doc.setFullTextUrl(domain.getFullTextUrl());
         doc.setStatus(domain.getStatus());
         doc.setPresentationDate(domain.getPresentationDate());
@@ -24,6 +25,7 @@ public class ProposalMapper {
         domain.setId(document.getId());
         domain.setTitle(document.getTitle());
         domain.setSummary(document.getSummary());
+        domain.setEmenta(document.getEmenta());
         domain.setFullTextUrl(document.getFullTextUrl());
         domain.setStatus(document.getStatus());
         domain.setPresentationDate(document.getPresentationDate());

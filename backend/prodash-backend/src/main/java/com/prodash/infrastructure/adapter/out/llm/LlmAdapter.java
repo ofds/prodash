@@ -6,13 +6,13 @@ import com.prodash.config.BatchSizeManager;
 import com.prodash.domain.model.Proposal;
 import com.prodash.infrastructure.adapter.out.llm.dto.LlmApiRequest;
 import com.prodash.infrastructure.adapter.out.llm.dto.LlmApiResponse;
+import io.github.resilience4j.retry.annotation.Retry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
@@ -26,6 +26,10 @@ public class LlmAdapter implements LlmPort {
     private final RestTemplate restTemplate;
     private final LlmMapper llmMapper;
     private final BatchSizeManager batchSizeManager;
+
+    private static final String SUMMARIZE_PROMPT = "summarize_proposals_prompt";
+    private static final String SCORE_PROMPT = "impact_score_prompt";
+
 
     @Value("${openrouter.api.key}")
     private String apiKey;
@@ -52,44 +56,58 @@ public class LlmAdapter implements LlmPort {
         return processBatch(proposals, "impact_score_prompt");
     }
 
-    private List<Proposal> processBatch(List<Proposal> proposals, String promptName) {
-        List<Proposal> validProposals = proposals.stream()
+    @Retry(name = "llm-api", fallbackMethod = "processBatchFallback")
+    public List<Proposal> processBatch(List<Proposal> proposals, String promptName) {
+        log.debug("Attempting to process batch for prompt: {}", promptName);
+        
+        // ** THE FIX IS HERE **
+        // Select the proposals that are valid for the given task.
+        List<Proposal> validProposals;
+        if (SUMMARIZE_PROMPT.equals(promptName)) {
+            // For summarization, we need proposals with an 'ementa' but no 'summary'.
+            validProposals = proposals.stream()
+                .filter(p -> p.getEmenta() != null && !p.getEmenta().isBlank() && p.getSummary() == null)
+                .collect(Collectors.toList());
+        } else {
+            // For scoring, we need proposals that already have a 'summary'.
+            validProposals = proposals.stream()
                 .filter(p -> p.getSummary() != null && !p.getSummary().isBlank())
                 .collect(Collectors.toList());
+        }
 
         if (validProposals.isEmpty()) {
-            log.debug("No valid proposals to process for prompt: {}", promptName);
+            log.warn("No valid proposals to process for prompt: {}. Skipping LLM call.", promptName);
+            // Return the original list so that proposals not meant for this step are not lost.
             return proposals;
         }
 
         LlmApiRequest request = llmMapper.toApiRequest(validProposals, promptName, modelName);
-
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(apiKey);
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<LlmApiRequest> entity = new HttpEntity<>(request, headers);
 
-        try {
-            ResponseEntity<LlmApiResponse> response = restTemplate.postForEntity(apiUrl, entity, LlmApiResponse.class);
-            
-            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
-                return llmMapper.updateProposalsFromApiResponse(response.getBody(), proposals);
-            } else {
-                log.error("Received non-OK status from LLM API: {}", response.getStatusCode());
-                // Throw an exception to signal failure to the calling service
-                throw new HttpClientErrorException(response.getStatusCode(), "LLM API returned non-OK status.");
-            }
-        } catch (HttpClientErrorException e) {
-            // Check for specific statuses that indicate the API is overloaded.
-            if (e.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS || e.getStatusCode().is5xxServerError()) {
-                batchSizeManager.decreaseBatchSize();
-            }
-            // Re-throw the exception to let the service layer know the batch failed.
-            throw e;
-        } catch (RestClientException e) {
-            log.error("A non-HTTP error occurred during API call for prompt: {}", promptName, e);
-            // Re-throw to signal failure.
-            throw e;
+        ResponseEntity<LlmApiResponse> response = restTemplate.postForEntity(apiUrl, entity, LlmApiResponse.class);
+        
+        if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+            return llmMapper.updateProposalsFromApiResponse(response.getBody(), proposals);
+        } else {
+            log.error("Received non-OK status from LLM API: {}", response.getStatusCode());
+            throw new HttpClientErrorException(response.getStatusCode(), "LLM API returned non-OK status.");
         }
+    }
+    
+    // Fallback method for when all retries fail
+    public List<Proposal> processBatchFallback(List<Proposal> proposals, String promptName, Throwable t) {
+        log.error("All retry attempts failed for prompt: {}. Error: {}", promptName, t.getMessage());
+        
+        if (t instanceof HttpClientErrorException e && (e.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS || e.getStatusCode().is5xxServerError())) {
+            // CORRECTED: Changed getCurrentBatchSize() to getBatchSize()
+            log.warn("API capacity exceeded - reducing batch size.");
+            batchSizeManager.decreaseBatchSize();
+        }
+
+        // IMPROVED: Re-throw the original exception to ensure the calling service knows about the failure.
+        throw new RuntimeException("Failed to process batch after multiple retries.", t);
     }
 }

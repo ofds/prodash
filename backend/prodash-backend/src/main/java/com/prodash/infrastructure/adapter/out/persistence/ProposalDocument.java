@@ -12,6 +12,7 @@ public class ProposalDocument {
     private String id;
     private String title;
     private String summary;
+    private String ementa; // Add this line
     @Field("full_text_url") // Example of mapping to a different field name
     private String fullTextUrl;
     private String status;
@@ -28,6 +29,8 @@ public class ProposalDocument {
     public void setTitle(String title) { this.title = title; }
     public String getSummary() { return summary; }
     public void setSummary(String summary) { this.summary = summary; }
+    public String getEmenta() { return ementa; }
+    public void setEmenta(String ementa) { this.ementa = ementa; }
     public String getFullTextUrl() { return fullTextUrl; }
     public void setFullTextUrl(String fullTextUrl) { this.fullTextUrl = fullTextUrl; }
     public String getStatus() { return status; }
