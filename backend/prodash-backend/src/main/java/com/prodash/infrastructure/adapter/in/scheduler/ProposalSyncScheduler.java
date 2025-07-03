@@ -4,6 +4,9 @@ import com.prodash.application.port.in.FetchProposalsUseCase;
 import com.prodash.application.port.in.FetchVotingsUseCase;
 import com.prodash.application.port.in.ScoreProposalsUseCase;
 import com.prodash.application.port.in.SummarizeProposalsUseCase;
+
+import jakarta.annotation.PostConstruct;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -31,11 +34,17 @@ public class ProposalSyncScheduler {
         this.fetchVotingsUseCase = fetchVotingsUseCase;
     }
 
+    @PostConstruct
+    public void onStartup() {
+        log.info("Executando sincronização inicial na inicialização da aplicação...");
+        runFullDataSync();
+    }
+
     /**
      * Roda o processo de sincronização de dados completo de forma sequencial.
      * Este único método agendado garante que os dados sejam buscados e processados na ordem correta.
      */
-    @Scheduled(initialDelay = 5000, cron = "${prodash.sync.cron}") // Use uma única propriedade para o ciclo completo
+    @Scheduled( cron = "${prodash.sync.cron}") // Use uma única propriedade para o ciclo completo
     public void runFullDataSync() {
         log.info("====== INICIANDO SINCRONIZAÇÃO COMPLETA DE DADOS ======");
 
