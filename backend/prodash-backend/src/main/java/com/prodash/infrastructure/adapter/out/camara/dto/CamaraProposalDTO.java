@@ -7,64 +7,68 @@ public class CamaraProposalDTO {
 
     @SerializedName("id")
     private String id;
-
+    @SerializedName("uri")
+    private String uri; // ADDED
     @SerializedName("siglaTipo")
     private String siglaTipo;
-
+    @SerializedName("descricaoTipo")
+    private String descricaoTipo; // ADDED
     @SerializedName("numero")
     private int numero;
-    
     @SerializedName("ano")
     private int ano;
-
     @SerializedName("ementa")
     private String ementa;
-    
+    @SerializedName("ementaDetalhada")
+    private String ementaDetalhada; // ADDED
+    @SerializedName("dataApresentacao")
+    private String dataApresentacao;
     @SerializedName("urlInteiroTeor")
     private String urlInteiroTeor;
+    @SerializedName("uriAutores")
+    private String uriAutores; // ADDED
+    @SerializedName("statusProposicao")
+    private StatusProposicaoDTO statusProposicao;
 
-    // This nested class represents the overall API response structure.
     public static class CamaraApiResponse {
-        public List<CamaraProposalDTO> dados; 
-        public List<LinkDTO> links; 
+        public List<CamaraProposalDTO> dados;
+        public List<LinkDTO> links;
     }
-    
-    // This nested class represents the link object needed for pagination
+
+    public static class StatusProposicaoDTO {
+        @SerializedName("dataHora")
+        public String dataHora;
+        @SerializedName("siglaOrgao")
+        public String siglaOrgao;
+        @SerializedName("descricaoTramitacao")
+        public String descricaoTramitacao;
+        @SerializedName("descricaoSituacao")
+        public String descricaoSituacao; // ADDED
+        @SerializedName("despacho")
+        public String despacho;
+    }
+
     public static class LinkDTO {
         @SerializedName("rel")
         public String rel;
-
         @SerializedName("href")
         public String href;
     }
-    
+
     // --- Getters ---
-    
-    public String getId() {
-        return id;
-    }
+    public String getId() { return id; }
+    public String getUri() { return uri; }
+    public String getSiglaTipo() { return siglaTipo; }
+    public String getDescricaoTipo() { return descricaoTipo; }
+    public int getNumero() { return numero; }
+    public int getAno() { return ano; }
+    public String getEmenta() { return ementa; }
+    public String getEmentaDetalhada() { return ementaDetalhada; }
+    public String getDataApresentacao() { return dataApresentacao; }
+    public String getUrlInteiroTeor() { return urlInteiroTeor; }
+    public String getUriAutores() { return uriAutores; }
+    public StatusProposicaoDTO getStatusProposicao() { return statusProposicao; }
 
-    public String getSiglaTipo() {
-        return siglaTipo;
-    }
-
-    public int getNumero() {
-        return numero;
-    }
-
-    public int getAno() {
-        return ano;
-    }
-    
-    public String getEmenta() {
-        return ementa;
-    }
-
-    public String getUrlInteiroTeor() {
-        return urlInteiroTeor;
-    }
-
-    // A helper method to create a user-friendly title
     public String getTitle() {
         return String.format("%s %d/%d", siglaTipo, numero, ano);
     }

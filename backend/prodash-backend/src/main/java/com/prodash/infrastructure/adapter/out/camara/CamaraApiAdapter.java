@@ -2,7 +2,9 @@ package com.prodash.infrastructure.adapter.out.camara;
 
 import com.google.gson.Gson;
 import com.prodash.application.port.out.CamaraApiPort;
+import com.prodash.domain.model.Author;
 import com.prodash.domain.model.Proposal;
+import com.prodash.infrastructure.adapter.out.camara.dto.CamaraAuthorDTO;
 import com.prodash.infrastructure.adapter.out.camara.dto.CamaraProposalDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +15,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,6 +30,8 @@ import java.util.stream.IntStream;
 public class CamaraApiAdapter implements CamaraApiPort {
 
     private static final Logger log = LoggerFactory.getLogger(CamaraApiAdapter.class);
+    private static final DateTimeFormatter API_DATE_TIME_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+
 
     private final RestTemplate restTemplate;
     private final String baseApiUrl;
@@ -92,13 +97,22 @@ public class CamaraApiAdapter implements CamaraApiPort {
     @Override
     public Optional<Proposal> fetchProposalDetails(String id) {
         String url = buildUrlForProposal(id);
-        log.info("Fetching proposal details for id: {}", id);
+        log.debug("Fetching proposal details for id: {}", id);
         try {
             String jsonResponse = restTemplate.getForObject(url, String.class);
             CamaraProposalDetailResponse response = gson.fromJson(jsonResponse, CamaraProposalDetailResponse.class);
 
             if (response != null && response.dados != null) {
-                return Optional.of(toDomain(response.dados));
+                // Convert the main proposal details
+                Proposal proposal = toDomain(response.dados);
+
+                // Now, fetch the authors if the URI exists
+                if (response.dados.getUriAutores() != null && !response.dados.getUriAutores().isEmpty()) {
+                    List<Author> authors = fetchAuthorsForProposal(response.dados.getUriAutores());
+                    proposal.setAuthors(authors);
+                }
+
+                return Optional.of(proposal);
             }
             log.warn("No 'dados' field in response for proposal id: {}", id);
             return Optional.empty();
@@ -107,6 +121,28 @@ public class CamaraApiAdapter implements CamaraApiPort {
             return Optional.empty();
         }
     }
+
+    /**
+     * NEW METHOD: Fetches the authors for a given proposal URI.
+     */
+    private List<Author> fetchAuthorsForProposal(String authorsUri) {
+        log.debug("Fetching authors from: {}", authorsUri);
+        try {
+            String jsonResponse = restTemplate.getForObject(authorsUri, String.class);
+            CamaraAuthorDTO.CamaraAuthorResponse response = gson.fromJson(jsonResponse, CamaraAuthorDTO.CamaraAuthorResponse.class);
+
+            if (response != null && response.dados != null) {
+                return response.dados.stream()
+                        .map(this::toAuthorDomain)
+                        .collect(Collectors.toList());
+            }
+            return Collections.emptyList();
+        } catch (RestClientException e) {
+            log.error("Failed to fetch authors from URI: {}. Error: {}", authorsUri, e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
 
     @Override
     public List<Proposal> fetchProposalDetailsInBatch(List<String> ids) {
@@ -173,7 +209,7 @@ public class CamaraApiAdapter implements CamaraApiPort {
                 .map(url -> UriComponentsBuilder.fromHttpUrl(url).build().getQueryParams().getFirst("pagina"))
                 .map(Integer::parseInt);
     }
-    
+
     private Optional<String> findLink(CamaraProposalDTO.CamaraApiResponse response, String rel) {
         if (response == null || response.links == null) {
             return Optional.empty();
@@ -187,11 +223,40 @@ public class CamaraApiAdapter implements CamaraApiPort {
     private Proposal toDomain(CamaraProposalDTO dto) {
         Proposal proposal = new Proposal();
         proposal.setId(dto.getId());
+        proposal.setUri(dto.getUri()); // MAPPED
         proposal.setSiglaTipo(dto.getSiglaTipo());
+        proposal.setDescricaoTipo(dto.getDescricaoTipo()); // MAPPED
         proposal.setNumero(dto.getNumero());
         proposal.setAno(dto.getAno());
         proposal.setEmenta(dto.getEmenta());
-        proposal.setTitle(dto.getTitle()); // Using the DTO's helper method
+        proposal.setEmentaDetalhada(dto.getEmentaDetalhada()); // MAPPED
+        proposal.setTitle(dto.getTitle());
+        proposal.setFullTextUrl(dto.getUrlInteiroTeor());
+        proposal.setUriAutores(dto.getUriAutores()); // MAPPED
+
+        if (dto.getDataApresentacao() != null && !dto.getDataApresentacao().isEmpty()) {
+            try {
+                LocalDateTime ldt = LocalDateTime.parse(dto.getDataApresentacao(), API_DATE_TIME_FORMATTER);
+                proposal.setPresentationDate(ldt.toLocalDate());
+            } catch (Exception e) {
+                log.error("Could not parse presentation date '{}' for proposal ID {}", dto.getDataApresentacao(), dto.getId(), e);
+            }
+        }
+
+        CamaraProposalDTO.StatusProposicaoDTO statusDto = dto.getStatusProposicao();
+        if (statusDto != null) {
+            proposal.setStatus(statusDto.descricaoTramitacao);
+            proposal.setSituation(statusDto.descricaoSituacao); // MAPPED
+            proposal.setDispatch(statusDto.despacho);
+            proposal.setProcessingAgency(statusDto.siglaOrgao);
+        }
+
         return proposal;
+    }
+    private Author toAuthorDomain(CamaraAuthorDTO dto) {
+        Author author = new Author();
+        author.setName(dto.getNome());
+        author.setType(dto.getTipo());
+        return author;
     }
 }
