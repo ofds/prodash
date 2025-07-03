@@ -1,13 +1,15 @@
 package com.prodash.infrastructure.adapter.in.scheduler;
 
 import com.prodash.application.port.in.FetchProposalsUseCase;
-import com.prodash.application.port.in.FetchVotingsUseCase; // 1. IMPORTAR
+import com.prodash.application.port.in.FetchVotingsUseCase;
 import com.prodash.application.port.in.ScoreProposalsUseCase;
 import com.prodash.application.port.in.SummarizeProposalsUseCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Component
 public class ProposalSyncScheduler {
@@ -17,12 +19,12 @@ public class ProposalSyncScheduler {
     private final FetchProposalsUseCase fetchProposalsUseCase;
     private final SummarizeProposalsUseCase summarizeProposalsUseCase;
     private final ScoreProposalsUseCase scoreProposalsUseCase;
-    private final FetchVotingsUseCase fetchVotingsUseCase; // 2. INJETAR O NOVO USE CASE
+    private final FetchVotingsUseCase fetchVotingsUseCase;
 
     public ProposalSyncScheduler(FetchProposalsUseCase fetchProposalsUseCase,
                                  SummarizeProposalsUseCase summarizeProposalsUseCase,
                                  ScoreProposalsUseCase scoreProposalsUseCase,
-                                 FetchVotingsUseCase fetchVotingsUseCase) { // 3. ATUALIZAR CONSTRUTOR
+                                 FetchVotingsUseCase fetchVotingsUseCase) {
         this.fetchProposalsUseCase = fetchProposalsUseCase;
         this.summarizeProposalsUseCase = summarizeProposalsUseCase;
         this.scoreProposalsUseCase = scoreProposalsUseCase;
@@ -30,43 +32,30 @@ public class ProposalSyncScheduler {
     }
 
     /**
-     * Triggers the proposal fetching process.
+     * Roda o processo de sincronização de dados completo de forma sequencial.
+     * Este único método agendado garante que os dados sejam buscados e processados na ordem correta.
      */
-    @Scheduled(initialDelay = 5000, fixedRateString = "${prodash.scheduler.fetching.rate}")
-    public void triggerFetching() {
-        log.info("SCHEDULER: Triggering proposal fetching.");
-        fetchProposalsUseCase.fetchNewProposals();
-    }
-    
-    /**
-     * 4. CRIAR NOVO MÉTODO AGENDADO PARA BUSCAR VOTAÇÕES
-     * Triggers the voting data fetching process.
-     * Runs after the initial proposal fetching.
-     */
-    @Scheduled(initialDelay = 60000, fixedRateString = "${prodash.scheduler.voting.rate}") // Ex: 1 minuto de delay
-    public void triggerVotingFetching() {
-        log.info("SCHEDULER: Triggering voting data fetching.");
-        fetchVotingsUseCase.fetchNewVotings();
-    }
+    @Scheduled(initialDelay = 5000, cron = "${prodash.sync.cron}") // Use uma única propriedade para o ciclo completo
+    public void runFullDataSync() {
+        log.info("====== INICIANDO SINCRONIZAÇÃO COMPLETA DE DADOS ======");
 
+        // Passo 1: Buscar novas proposições e obter a lista de seus IDs.
+        log.info("--- Passo 1: Buscando novas proposições...");
+        List<String> newProposalIds = fetchProposalsUseCase.fetchNewProposals();
 
-    /**
-     * Triggers the proposal summarization process.
-     */
-    @Scheduled(initialDelay = 300000, fixedRateString = "${prodash.scheduler.summarizing.rate}") // Aumentado para 5 min
-    public void triggerSummarization() {
-        log.info("SCHEDULER: Triggering proposal summarization.");
-        // O nome do método no seu use case pode ser diferente, ajuste se necessário
+        // Passo 2: Buscar votações APENAS para as proposições que acabaram de ser adicionadas.
+        if (newProposalIds != null && !newProposalIds.isEmpty()) {
+            log.info("--- Passo 2: Buscando votações para {} novas proposições...", newProposalIds.size());
+            fetchVotingsUseCase.fetchNewVotingsForProposals(newProposalIds);
+        } else {
+            log.info("--- Passo 2: Nenhuma nova proposição encontrada, pulando a busca por votações.");
+        }
+
+        // Passo 3: Enriquecer com LLM (sumarização e pontuação).
+        log.info("--- Passo 3: Sumarizando e pontuando propostas não processadas...");
         summarizeProposalsUseCase.summarizeUnsummarizedProposals();
-    }
-
-    /**
-     * Triggers the proposal scoring process.
-     */
-    @Scheduled(initialDelay = 600000, fixedRateString = "${prodash.scheduler.scoring.rate}") // Aumentado para 10 min
-    public void triggerScoring() {
-        log.info("SCHEDULER: Triggering proposal scoring.");
-        // O nome do método no seu use case pode ser diferente, ajuste se necessário
         scoreProposalsUseCase.scoreProposals();
+
+        log.info("====== SINCRONIZAÇÃO COMPLETA DE DADOS FINALIZADA ======");
     }
 }

@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,18 +28,17 @@ public class ProposalFetchingService implements FetchProposalsUseCase {
     }
 
     @Override
-    public void fetchNewProposals() {
+    public List<String> fetchNewProposals() { // MODIFIED: Return type is now List<String>
         log.info("Starting new proposal fetching process...");
         List<String> allProposalIds = camaraApiPort.fetchLatestProposalIds();
 
         if (allProposalIds.isEmpty()) {
             log.info("No proposals found from the external API.");
-            return;
+            return Collections.emptyList(); // Return empty list
         }
 
         log.info("Fetched {} proposal IDs. Filtering for new ones...", allProposalIds.size());
 
-        // 1. Filter for new IDs first
         List<String> newProposalIds = allProposalIds.parallelStream()
                 .filter(id -> proposalRepositoryPort.findById(id).isEmpty())
                 .collect(Collectors.toList());
@@ -46,10 +46,10 @@ public class ProposalFetchingService implements FetchProposalsUseCase {
         if (newProposalIds.isEmpty()) {
             log.info("No new proposals to fetch and save.");
             log.info("Finished proposal fetching process.");
-            return;
+            return Collections.emptyList(); // Return empty list
         }
 
-        log.info("Found {} new proposals. Fetching details in parallel batches of {}.", newProposalIds.size(), BATCH_SIZE);
+        log.info("Found {} new proposals. Fetching details...", newProposalIds.size());
 
         // 2. Partition the new IDs into batches
         List<List<String>> batches = Lists.partition(newProposalIds, BATCH_SIZE);
@@ -70,5 +70,7 @@ public class ProposalFetchingService implements FetchProposalsUseCase {
 
         log.info("Successfully fetched and saved {} new proposals.", savedCount);
         log.info("Finished proposal fetching process.");
+
+        return newProposalIds;
     }
 }

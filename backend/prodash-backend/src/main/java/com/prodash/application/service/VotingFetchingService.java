@@ -3,6 +3,9 @@ package com.prodash.application.service;
 import com.prodash.application.port.in.FetchVotingsUseCase;
 import com.prodash.application.port.out.*;
 import com.prodash.domain.model.*;
+
+import me.tongfei.progressbar.ProgressBar;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -39,33 +42,31 @@ public class VotingFetchingService implements FetchVotingsUseCase {
     }
 
     @Override
-    public void fetchNewVotings() {
-        log.info("Starting new voting data fetching process...");
-
-        // Estratégia: Buscar votações para todas as propostas já salvas.
-        // Uma estratégia mais otimizada poderia focar apenas em propostas recentes.
-        List<Proposal> proposals = proposalRepository.findAll();
-        if (proposals.isEmpty()) {
-            log.info("No proposals in the database to check for votings.");
+    public void fetchNewVotingsForProposals(List<String> proposalIds) { // MODIFIED: Method signature
+        if (proposalIds == null || proposalIds.isEmpty()) {
+            log.info("No new proposals to check for votings.");
             return;
         }
 
-        log.info("Checking for new votings for {} proposals.", proposals.size());
-
-        for (Proposal p : proposals) {
-            fetchAndSaveVotingsForProposal(p);
+        log.info("Checking for new votings for {} new proposals.", proposalIds.size());
+        
+        // The rest of the logic is now focused only on the provided IDs
+        try (ProgressBar pb = new ProgressBar("Checking Votings", proposalIds.size())) {
+            proposalIds.parallelStream().forEach(proposalId -> {
+                pb.step();
+                fetchAndSaveVotingsForProposal(proposalId);
+            });
         }
-
         log.info("Finished voting data fetching process.");
     }
 
-    private void fetchAndSaveVotingsForProposal(Proposal proposal) {
-        List<Voting> votings = camaraApiPort.fetchVotingsForProposal(proposal.getId());
+    private void fetchAndSaveVotingsForProposal(String proposalId) {
+        List<Voting> votings = camaraApiPort.fetchVotingsForProposal(proposalId);
         if (votings.isEmpty()) {
             return; // Nenhuma votação para esta proposta
         }
 
-        log.info("Found {} votings for proposal ID {}", votings.size(), proposal.getId());
+        log.info("Found {} votings for proposal ID {}", votings.size(), proposalId);
         votingRepository.saveAll(votings);
 
         // Para cada votação, buscar e salvar os votos individuais.
