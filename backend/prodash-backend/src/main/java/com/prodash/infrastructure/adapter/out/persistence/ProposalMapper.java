@@ -6,6 +6,7 @@ import com.prodash.domain.model.Voting;
 import com.prodash.domain.model.Author;
 import com.prodash.domain.model.Deputy;
 import com.prodash.domain.model.Party;
+import com.prodash.domain.model.Theme;
 
 import java.util.Collections;
 import java.util.stream.Collectors;
@@ -44,6 +45,11 @@ public class ProposalMapper {
         } else {
             doc.setAuthors(Collections.emptyList());
         }
+        if (domain.getThemes() != null) {
+            doc.setThemes(domain.getThemes().stream()
+                .map(this::toThemeDocument)
+                .collect(Collectors.toList()));
+        }
         return doc;
     }
 
@@ -73,6 +79,11 @@ public class ProposalMapper {
             domain.setAuthors(document.getAuthors().stream()
                     .map(this::toAuthorDomain)
                     .collect(Collectors.toList()));
+        }
+        if (document.getThemes() != null) {
+            domain.setThemes(document.getThemes().stream()
+                .map(this::toThemeDomain)
+                .collect(Collectors.toList()));
         }
         return domain;
     }
@@ -150,5 +161,18 @@ public class ProposalMapper {
     public Vote toDomain(VoteDocument doc) {
         if (doc == null) return null;
         return new Vote(doc.getVotacaoId(), doc.getDeputadoId(), doc.getTipoVoto());
+    }
+
+    private ThemeDocument toThemeDocument(Theme theme) {
+        if (theme == null) return null;
+        ThemeDocument doc = new ThemeDocument();
+        doc.setCod(theme.cod());
+        doc.setNome(theme.nome());
+        return doc;
+    }
+    
+    private Theme toThemeDomain(ThemeDocument doc) {
+        if (doc == null) return null;
+        return new Theme(doc.getCod(), doc.getNome());
     }
 }

@@ -206,15 +206,16 @@ public class CamaraApiAdapter implements CamaraApiPort {
             CamaraProposalDetailResponse response = gson.fromJson(jsonResponse, CamaraProposalDetailResponse.class);
 
             if (response != null && response.dados != null) {
-                // Convert the main proposal details
                 Proposal proposal = toDomain(response.dados);
-
-                // Now, fetch the authors if the URI exists
+    
+                // Buscar autores (lógica existente)
                 if (response.dados.getUriAutores() != null && !response.dados.getUriAutores().isEmpty()) {
-                    List<Author> authors = fetchAuthorsForProposal(response.dados.getUriAutores());
-                    proposal.setAuthors(authors);
+                    proposal.setAuthors(fetchAuthorsForProposal(response.dados.getUriAutores()));
                 }
-
+    
+                // NOVA LÓGICA: Buscar temas
+                proposal.setThemes(fetchThemesForProposal(proposal.getId()));
+    
                 return Optional.of(proposal);
             }
             log.warn("No 'dados' field in response for proposal id: {}", id);
@@ -285,6 +286,25 @@ public class CamaraApiAdapter implements CamaraApiPort {
                 .map(String::valueOf)
                 .collect(Collectors.toList());
     }
+
+    @Override
+public List<Theme> fetchThemesForProposal(String proposalId) {
+    String url = buildUrl("/proposicoes/{id}/temas", proposalId);
+    log.debug("Fetching themes for proposal id: {}", proposalId);
+    try {
+        String jsonResponse = restTemplate.getForObject(url, String.class);
+        CamaraThemeDTO.CamaraThemeResponse response = gson.fromJson(jsonResponse, CamaraThemeDTO.CamaraThemeResponse.class);
+        if (response != null && response.dados != null) {
+            return response.dados.stream()
+                .map(dto -> new Theme(dto.cod, dto.nome))
+                .collect(Collectors.toList());
+        }
+        return Collections.emptyList();
+    } catch (RestClientException e) {
+        log.error("Failed to fetch themes for proposal id: {}. Error: {}", proposalId, e.getMessage());
+        return Collections.emptyList();
+    }
+}
 
     private String buildUrlForPage(int pageNumber) {
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");

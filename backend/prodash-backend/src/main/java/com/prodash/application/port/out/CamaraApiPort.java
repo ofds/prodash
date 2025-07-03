@@ -5,6 +5,7 @@ import com.prodash.domain.model.Party;
 import com.prodash.domain.model.Proposal;
 import com.prodash.domain.model.Vote;
 import com.prodash.domain.model.Voting;
+import com.prodash.domain.model.Theme;
 
 import java.util.List;
 import java.util.Optional;
@@ -38,4 +39,5 @@ public interface CamaraApiPort {
     List<Vote> fetchVotesForVoting(String votingId);
     Optional<Deputy> fetchDeputyDetails(Integer deputyId);
     Optional<Party> fetchPartyDetails(Integer partyId);
+    List<Theme> fetchThemesForProposal(String proposalId);
 }
