@@ -37,4 +37,10 @@ public interface ProposalRepositoryPort {
      * @return A list of proposals with a non-null summary and a null impact score.
      */
     List<Proposal> findBySummaryIsNotNullAndImpactScoreIsNull();
+
+    /**
+     * Finds all proposal IDs currently in the repository.
+     * @return A list of all existing proposal IDs.
+     */
+    List<String> findAllIds();
 }

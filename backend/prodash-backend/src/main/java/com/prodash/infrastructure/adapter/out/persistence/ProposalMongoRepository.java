@@ -1,6 +1,7 @@
 package com.prodash.infrastructure.adapter.out.persistence;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -24,4 +25,7 @@ public interface ProposalMongoRepository extends MongoRepository<ProposalDocumen
      * @return A list of proposal documents with a non-null summary and a null impact score.
      */
     List<ProposalDocument> findBySummaryIsNotNullAndImpactScoreIsNull();
+
+    @Query(value = "{}", fields = "{'_id' : 1}")
+    List<ProposalDocument> findAllIds();
 }

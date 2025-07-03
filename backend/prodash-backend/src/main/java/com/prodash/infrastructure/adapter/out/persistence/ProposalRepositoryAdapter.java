@@ -51,4 +51,11 @@ public class ProposalRepositoryAdapter implements ProposalRepositoryPort {
                 .map(mapper::toDomain)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public List<String> findAllIds() { 
+        return mongoRepository.findAllIds().stream()
+                .map(ProposalDocument::getId)
+                .collect(Collectors.toList());
+    }
 }

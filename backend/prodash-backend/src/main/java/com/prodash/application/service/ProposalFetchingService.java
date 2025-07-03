@@ -10,7 +10,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,8 +41,11 @@ public class ProposalFetchingService implements FetchProposalsUseCase {
 
         log.info("Fetched {} proposal IDs. Filtering for new ones...", allProposalIds.size());
 
+        Set<String> existingIds = new HashSet<>(proposalRepositoryPort.findAllIds());
+
+        // 2. Filtre em memória, o que é ordens de magnitude mais rápido.
         List<String> newProposalIds = allProposalIds.parallelStream()
-                .filter(id -> proposalRepositoryPort.findById(id).isEmpty())
+                .filter(id -> !existingIds.contains(id))
                 .collect(Collectors.toList());
 
         if (newProposalIds.isEmpty()) {
