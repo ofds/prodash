@@ -12,6 +12,9 @@ import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import com.prodash.domain.model.AnalysisResult;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import java.lang.reflect.Type;
 import java.util.List;
@@ -148,5 +151,57 @@ public class LlmMapper {
         private String summary;
         private Integer impactScore;
         private String justification;
+    }
+
+    /**
+     * Creates an LlmApiRequest for a single proposal using a user-defined prompt.
+     * This is for the on-demand analysis feature.
+     */
+    public LlmApiRequest toApiRequest(Proposal proposal, String userPrompt, String modelName) {
+        // The user's prompt is expected to contain a placeholder for the proposal's text.
+        String proposalText = proposal.getSummary() != null ? proposal.getSummary() : proposal.getEmenta();
+        String finalPrompt = userPrompt.replace("{proposal_text}", proposalText);
+
+        LlmApiRequest.Message userMessage = new LlmApiRequest.Message("user", finalPrompt);
+        return new LlmApiRequest(modelName, List.of(userMessage));
+    }
+
+    /**
+     * Parses the LLM API response and maps it to an AnalysisResult domain object.
+     * This is designed to handle a single JSON object response, not an array.
+     */
+    public AnalysisResult toAnalysisResult(LlmApiResponse response, String proposalId, String jobId) {
+        if (response == null || response.getChoices() == null || response.getChoices().isEmpty()) {
+            log.warn("LLM response is empty or has no choices for proposalId: {}", proposalId);
+            throw new IllegalArgumentException("Empty or invalid LLM response.");
+        }
+
+        String content = response.getChoices().get(0).getMessage().getContent();
+        try {
+            // Find the start and end of the JSON object
+            int startIndex = content.indexOf('{');
+            int endIndex = content.lastIndexOf('}');
+
+            if (startIndex != -1 && endIndex != -1 && endIndex > startIndex) {
+                String jsonObjectString = content.substring(startIndex, endIndex + 1);
+                JsonObject resultJson = JsonParser.parseString(jsonObjectString).getAsJsonObject();
+
+                Integer score = resultJson.has("impact_score") ? resultJson.get("impact_score").getAsInt() : null;
+                String justification = resultJson.has("justification") ? resultJson.get("justification").getAsString() : null;
+
+                if (score == null || justification == null) {
+                    log.error("LLM response for proposal {} is missing 'impact_score' or 'justification'. Content: {}", proposalId, content);
+                    throw new IllegalArgumentException("Invalid LLM response format.");
+                }
+
+                return new AnalysisResult(null, jobId, proposalId, score, justification);
+            } else {
+                 log.error("Could not find a valid JSON object in the LLM response. Content was: {}", content);
+                 throw new IllegalArgumentException("Could not find valid JSON object in response.");
+            }
+        } catch (Exception e) {
+            log.error("Failed to parse JSON object from LLM response for proposal {}: {}", proposalId, content, e);
+            throw new RuntimeException("Failed to parse JSON from LLM response.", e);
+        }
     }
 }

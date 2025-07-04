@@ -13,6 +13,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+import com.prodash.domain.model.AnalysisResult;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -108,5 +109,35 @@ public class LlmAdapter implements LlmPort {
 
         // Re-throw the original exception to ensure the calling service is aware of the failure.
         throw new RuntimeException("Failed to process batch after multiple retries.", t);
+    }
+
+
+    @Override
+    @Retry(name = "llm-api", fallbackMethod = "analyzeProposalFallback")
+    public AnalysisResult analyzeProposal(Proposal proposal, String userPrompt, String jobId) {
+        log.debug("Attempting to analyze proposal {} for job {}", proposal.getId(), jobId);
+
+        LlmApiRequest request = llmMapper.toApiRequest(proposal, userPrompt, modelName);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(apiKey);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<LlmApiRequest> entity = new HttpEntity<>(request, headers);
+
+        ResponseEntity<LlmApiResponse> response = restTemplate.postForEntity(apiUrl, entity, LlmApiResponse.class);
+
+        if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+            // The LlmMapper will need a new method to handle this mapping
+            return llmMapper.toAnalysisResult(response.getBody(), proposal.getId(), jobId);
+        } else {
+            log.error("Received non-OK status from LLM API: {}", response.getStatusCode());
+            throw new HttpClientErrorException(response.getStatusCode(), "LLM API returned non-OK status.");
+        }
+    }
+
+    // Fallback for the new on-demand analysis method
+    public AnalysisResult analyzeProposalFallback(Proposal proposal, String userPrompt, String jobId, Throwable t) {
+        log.error("All retry attempts failed for proposal {} in job {}. Error: {}", proposal.getId(), jobId, t.getMessage());
+        // Re-throw the original exception to be caught by the async service
+        throw new RuntimeException("Failed to analyze proposal " + proposal.getId() + " after multiple retries.", t);
     }
 }
