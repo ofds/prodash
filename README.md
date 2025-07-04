@@ -1,6 +1,8 @@
 # ProposalAI: Legislative Analysis Engine
 
-ProposalAI is a powerful backend service designed to autonomously fetch, analyze, and score legislative proposals. Leveraging a modern tech stack and a robust Clean Architecture, this project provides a streamlined way to process and understand complex legislative data using the power of Large Language Models (LLMs).
+ProposalAI is a powerful backend service designed to autonomously fetch, analyze, and score legislative proposals from Brazil's Chamber of Deputies. It now captures not only the proposals themselves but also the entire voting record, including individual deputy votes, parties, and thematic areas.
+
+Leveraging a modern tech stack and a robust Clean Architecture, this project provides a streamlined way to process and understand complex legislative data using the power of Large Language Models (LLMs).
 
 ### Table of Contents
 
@@ -14,19 +16,20 @@ ProposalAI is a powerful backend service designed to autonomously fetch, analyze
   - [License](https://www.google.com/search?q=%23license)
   - [Acknowledgments](https://www.google.com/search?q=%23acknowledgments)
 
-\<hr\>
+-----
 
 ## Highlights
 
-  * **Automated Data Ingestion**: A built-in scheduler automatically fetches the latest legislative proposals from Brazil's official Câmara dos Deputados API.
-  * **AI-Powered Analysis**: Utilizes a Large Language Model (via OpenRouter) to perform two key tasks in efficient batches:
-      * **Summarization**: Generates concise, neutral summaries for complex proposals.
-      * **Impact Scoring**: Assigns a quantitative `impact_score` (0.0-10.0) and a qualitative `justification` to each proposal.
-  * **Clean Architecture**: Refactored for maintainability, testability, and scalability by separating concerns into distinct Domain, Application, and Infrastructure layers.
-  * **RESTful API**: Exposes a simple REST endpoint to retrieve all processed proposals, making it easy to integrate with a frontend or other services.
-  * **Resilient and Scalable**: Built on Spring Boot and MongoDB, ensuring a robust foundation for handling large volumes of data.
+  - **Comprehensive Data Ingestion**: A built-in scheduler automatically fetches the latest legislative proposals, **votings**, **individual votes**, **deputies**, **parties**, and **thematic areas** from Brazil's official Câmara dos Deputados API.
+  - **AI-Powered Analysis**: Utilizes a Large Language Model (via OpenRouter) to perform two key tasks in efficient batches:
+      - **Summarization**: Generates concise, neutral summaries for complex proposals.
+      - **Impact Scoring**: Assigns a quantitative `impact_score` (0.0-10.0) and a qualitative `justification` to each proposal.
+  - **Clean Architecture**: Refactored for maintainability, testability, and scalability by separating concerns into distinct Domain, Application, and Infrastructure layers.
+  - **Efficient & Scalable**: Employs an intelligent data fetching strategy that only requests new information, avoiding full database scans and minimizing API calls.
+  - **User-Friendly Console**: Displays a dynamic progress bar for long-running tasks, providing clear visual feedback on the data synchronization process.
+  - **RESTful API**: Exposes a simple REST endpoint to retrieve all processed proposals, making it easy to integrate with a frontend or other services.
 
-\<hr\>
+-----
 
 ## Architectural Vision
 
@@ -34,46 +37,53 @@ This project was recently refactored to follow the principles of **Clean Archite
 
 The key benefits of this architecture include:
 
-  * **High Testability**: Each layer can be tested in isolation.
-  * **Framework Independence**: The core logic isn't tied to Spring, allowing for easier upgrades or migrations in the future.
-  * **Maintainability**: A clear separation of concerns makes the codebase easier to understand, modify, and extend.
+  - **High Testability**: Each layer can be tested in isolation.
+  - **Framework Independence**: The core logic isn't tied to Spring, allowing for easier upgrades or migrations in the future.
+  - **Maintainability**: A clear separation of concerns makes the codebase easier to understand, modify, and extend.
 
 The application is structured into three primary layers:
 
-  * `domain`: Contains the core business models and rules.
-  * `application`: Orchestrates the use cases (e.g., ingesting and scoring proposals).
-  * `infrastructure`: Handles all external communication, such as database connections, API calls, and scheduling.
+  - `domain`: Contains the core business models and rules.
+  - `application`: Orchestrates the use cases (e.g., fetching and scoring proposals).
+  - `infrastructure`: Handles all external communication, such as database connections, API calls, and scheduling.
 
-\<hr\>
+-----
 
 ## How It Works
 
-1.  The `ProposalSyncScheduler` automatically triggers the ingestion process on a schedule.
-2.  The `ProposalIngestionService` calls the `CamaraApiAdapter` to fetch a list of the latest proposals.
-3.  The service filters out any proposals that already exist in the MongoDB database.
-4.  The remaining new proposals are sent in a single batch to the `LlmAdapter`.
-5.  The `LlmAdapter` uses the `summarize_proposals_prompt.txt` to ask the configured LLM to generate a summary for each proposal.
-6.  The service saves the newly summarized proposals to the database.
-7.  Separately, the scheduler triggers the `ProposalScoringService`.
-8.  This service finds all unscored proposals in the database and sends them in a batch to the `LlmAdapter`, this time using the `impact_score_prompt.txt`.
-9.  The LLM returns an impact score and justification for each, which are then saved to the database.
+The data ingestion and processing pipeline is fully automated and runs in a specific, efficient sequence.
 
-\<hr\>
+1.  **Scheduler Trigger**: The `ProposalSyncScheduler` triggers the `runFullDataSync` method based on a single cron expression.
+2.  **Fetch New Proposals**: The `ProposalFetchingService` is called.
+      - It fetches the latest proposal IDs from the Câmara API.
+      - It efficiently queries the database **once** to get all existing IDs.
+      - It filters in-memory to find only the new, unique proposal IDs.
+      - For these new IDs, it fetches the full details, including their associated **themes**.
+3.  **Fetch Votings and Votes**: The list of new proposal IDs is passed to the `VotingFetchingService`.
+      - For each new proposal, it queries the API for any associated **voting sessions**.
+      - If new voting sessions are found, it queries the API for every **individual vote** within that session.
+      - It ensures the corresponding **Deputy** and **Party** for each vote are saved to the database.
+4.  **LLM Enrichment**: The scheduler then triggers the AI-powered services.
+      - The `SummarizeProposalsUseCase` finds proposals without a summary and sends them to the LLM.
+      - The `ScoreProposalsUseCase` finds summarized but unscored proposals and sends them to the LLM for an impact score and justification.
+5.  **Process Repeats**: The entire cycle repeats on the schedule defined by `prodash.sync.cron`.
+
+-----
 
 ## Tech Stack
 
-  * **Backend**: Spring Boot 3
-  * **Language**: Java 17
-  * **Database**: MongoDB
-  * **Build Tool**: Apache Maven
-  * **Core Libraries**:
-      * Spring Data MongoDB
-      * Spring Web
-      * Spring Scheduler
-  * **LLM Integration**: OpenRouter (configurable for any OpenAI-compatible API)
-  * **Code Quality**: Lombok
+  - **Backend**: Spring Boot 3
+  - **Language**: Java 17
+  - **Database**: MongoDB
+  - **Build Tool**: Apache Maven
+  - **Core Libraries**:
+      - Spring Data MongoDB
+      - Spring Web
+      - Spring Scheduler
+  - **Console UI**: `me.tongfei:progressbar`
+  - **LLM Integration**: OpenRouter (configurable for any OpenAI-compatible API)
 
-\<hr\>
+-----
 
 ## Installation & Setup
 
@@ -81,10 +91,10 @@ Follow these steps to get the project running on your local machine.
 
 ### Prerequisites
 
-  * **Java 17 SDK**
-  * **Apache Maven 3.8+**
-  * **MongoDB** (running on `mongodb://localhost:27017`)
-  * **OpenRouter API Key** (or another compatible LLM provider)
+  - **Java 17 SDK**
+  - **Apache Maven 3.8+**
+  - **MongoDB** (running on `mongodb://localhost:27017`)
+  - **OpenRouter API Key** (or another compatible LLM provider)
 
 ### Step-by-Step Installation
 
@@ -95,10 +105,11 @@ Follow these steps to get the project running on your local machine.
     cd proposal-ai
     ```
 
-2.  **Configure your API Key:**
+2.  **Configure your API Key and Scheduler:**
 
-      * Open the `src/main/resources/application.properties` file.
-      * Find the `openrouter.api.key` property and replace `YOUR_OPENROUTER_API_KEY` with your actual key.
+      - Open the `src/main/resources/application.properties` file.
+      - Find the `openrouter.api.key` property and replace `YOUR_OPENROUTER_API_KEY` with your actual key.
+      - Adjust the `prodash.sync.cron` expression if needed. The default is set to run every 6 hours.
 
     <!-- end list -->
 
@@ -107,17 +118,21 @@ Follow these steps to get the project running on your local machine.
     openrouter.api.key=YOUR_OPENROUTER_API_KEY
     openrouter.api.url=https://openrouter.ai/api/v1/chat/completions
     llm.model.name=openai/gpt-3.5-turbo
+
+    # Cron for the full data sync cycle (e.g., every 6 hours)
+    prodash.sync.cron=0 0 */6 * * *
     ```
 
 3.  **Build and run the application using Maven:**
 
     ```bash
+    mvn clean install
     mvn spring-boot:run
     ```
 
-The application will start, and after a short delay (configured in `ProposalSyncScheduler`), it will begin fetching and processing proposals.
+The application will start, and after a short delay, it will begin the first full data synchronization process.
 
-\<hr\>
+-----
 
 ## Usage
 
@@ -125,8 +140,8 @@ Once the application is running, you can retrieve the processed proposals by cal
 
 ### Retrieve All Proposals
 
-  * **URL**: `http://localhost:8080/api/proposals`
-  * **Method**: `GET`
+  - **URL**: `http://localhost:8080/api/proposals`
+  - **Method**: `GET`
 
 **Example using `curl`:**
 
@@ -143,15 +158,25 @@ curl http://localhost:8080/api/proposals
     "title": "PL 1933/2024",
     "summary": "This is a concise, AI-generated summary of the legislative proposal's main objectives.",
     "fullTextUrl": "https://www.camara.leg.br/proposicoesWeb/fichadetramitacao?idProposicao=2421344",
-    "status": null,
-    "presentationDate": null,
+    "status": "Aguardando Parecer do Relator na Comissão de Saúde (CSAUDE)",
+    "presentationDate": "2024-05-21",
     "impactScore": 8.2,
-    "justification": "This proposal has a high potential for economic impact due to its proposed changes to tax regulations."
+    "justification": "This proposal has a high potential for economic impact due to its proposed changes to tax regulations.",
+    "themes": [
+        {
+            "cod": 135,
+            "nome": "Saúde"
+        },
+        {
+            "cod": 142,
+            "nome": "Finanças Públicas e Orçamento"
+        }
+    ]
   }
 ]
 ```
 
-\<hr\>
+-----
 
 ## Contributing
 
@@ -163,18 +188,18 @@ Contributions are welcome\! If you have suggestions for improvements or find a b
 4.  Push to the branch (`git push origin feature/your-feature-name`).
 5.  Open a **Pull Request**.
 
-Please ensure your code adheres to the existing style and that all tests pass.
+Please ensure your code adheres to the existing style.
 
-\<hr\>
+-----
 
 ## License
 
 This project is licensed under the MIT License. See the LICENSE file for details.
 
-\<hr\>
+-----
 
 ## Acknowledgments
 
-  * The **Clean Architecture** principles as described by Robert C. Martin.
-  * The **Spring Boot** team for creating a powerful and easy-to-use framework.
-  * The **OpenRouter** team for providing a flexible gateway to various LLMs.
+  - The **Clean Architecture** principles as described by Robert C. Martin.
+  - The **Spring Boot** team for creating a powerful and easy-to-use framework.
+  - The **OpenRouter** team for providing a flexible gateway to various LLMs.
