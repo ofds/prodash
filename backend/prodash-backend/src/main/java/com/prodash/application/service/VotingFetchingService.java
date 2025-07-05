@@ -5,6 +5,7 @@ import com.prodash.application.port.out.*;
 import com.prodash.domain.model.*;
 
 import me.tongfei.progressbar.ProgressBar;
+import me.tongfei.progressbar.ProgressBarStyle;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,13 +27,12 @@ public class VotingFetchingService implements FetchVotingsUseCase {
     private final DeputyRepositoryPort deputyRepository;
     private final PartyRepositoryPort partyRepository;
 
-
     public VotingFetchingService(CamaraApiPort camaraApiPort,
-                                 ProposalRepositoryPort proposalRepository,
-                                 VotingRepositoryPort votingRepository,
-                                 VoteRepositoryPort voteRepository,
-                                 DeputyRepositoryPort deputyRepository,
-                                 PartyRepositoryPort partyRepository) {
+            ProposalRepositoryPort proposalRepository,
+            VotingRepositoryPort votingRepository,
+            VoteRepositoryPort voteRepository,
+            DeputyRepositoryPort deputyRepository,
+            PartyRepositoryPort partyRepository) {
         this.camaraApiPort = camaraApiPort;
         this.proposalRepository = proposalRepository;
         this.votingRepository = votingRepository;
@@ -42,19 +42,26 @@ public class VotingFetchingService implements FetchVotingsUseCase {
     }
 
     @Override
-    public void fetchNewVotingsForProposals(List<String> proposalIds) { // MODIFIED: Method signature
+    public void fetchNewVotingsForProposals(List<String> proposalIds) {
         if (proposalIds == null || proposalIds.isEmpty()) {
             log.info("No new proposals to check for votings.");
             return;
         }
 
         log.info("Checking for new votings for {} new proposals.", proposalIds.size());
-        
-        // The rest of the logic is now focused only on the provided IDs
-        try (ProgressBar pb = new ProgressBar("Checking Votings", proposalIds.size())) {
+
+        // Create a single ProgressBar instance
+        try (ProgressBar pb = ProgressBar.builder()
+                .setTaskName("Checking Votings")
+                .setInitialMax(proposalIds.size())
+                .setStyle(ProgressBarStyle.ASCII)
+                .build()) {
             proposalIds.parallelStream().forEach(proposalId -> {
-                pb.step();
-                fetchAndSaveVotingsForProposal(proposalId);
+                try {
+                    fetchAndSaveVotingsForProposal(proposalId);
+                } finally {
+                    pb.step(); // Update the progress bar in a thread-safe manner
+                }
             });
         }
         log.info("Finished voting data fetching process.");
@@ -83,23 +90,24 @@ public class VotingFetchingService implements FetchVotingsUseCase {
     }
 
     /**
-     * Otimização: Verifica quais deputados e partidos dos votos já não existem no banco de dados
+     * Otimização: Verifica quais deputados e partidos dos votos já não existem no
+     * banco de dados
      * e busca apenas os novos para evitar chamadas de API desnecessárias.
      */
     private void ensureDeputiesAndPartiesExist(List<Vote> votes) {
         Set<Integer> deputyIds = votes.stream().map(Vote::deputadoId).collect(Collectors.toSet());
 
-        // Para cada deputado, busca os detalhes se ele ainda não existir no nosso banco.
+        // Para cada deputado, busca os detalhes se ele ainda não existir no nosso
+        // banco.
         for (Integer deputyId : deputyIds) {
             deputyRepository.findById(deputyId).orElseGet(() -> {
                 camaraApiPort.fetchDeputyDetails(deputyId).ifPresent(deputy -> {
                     deputyRepository.save(deputy);
                     // Garante que o partido do deputado também exista
-                    partyRepository.findById(deputy.partidoId()).orElseGet(() ->
-                        camaraApiPort.fetchPartyDetails(deputy.partidoId())
-                            .map(partyRepository::save)
-                            .orElse(null)
-                    );
+                    partyRepository.findById(deputy.partidoId())
+                            .orElseGet(() -> camaraApiPort.fetchPartyDetails(deputy.partidoId())
+                                    .map(partyRepository::save)
+                                    .orElse(null));
                 });
                 return null; // findById precisa de um retorno, mas a ação é o que importa.
             });

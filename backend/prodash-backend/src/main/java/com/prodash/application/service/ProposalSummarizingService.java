@@ -6,6 +6,7 @@ import com.prodash.application.port.out.LlmPort;
 import com.prodash.application.port.out.ProposalRepositoryPort;
 import com.prodash.config.BatchSizeManager;
 import com.prodash.domain.model.Proposal;
+import me.tongfei.progressbar.ProgressBar;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -44,23 +45,33 @@ public class ProposalSummarizingService implements SummarizeProposalsUseCase {
 
         List<List<Proposal>> batches = Lists.partition(unsummarizedProposals, currentBatchSize);
 
-        for (int i = 0; i < batches.size(); i++) {
-            List<Proposal> batch = batches.get(i);
-            log.info("Processing summarization batch {} of {}: {} proposals.", i + 1, batches.size(), batch.size());
+        // Wrap the process in a ProgressBar
+        try (ProgressBar pb = new ProgressBar("Summarizing Proposals", unsummarizedProposals.size())) {
+            for (int i = 0; i < batches.size(); i++) {
+                List<Proposal> batch = batches.get(i);
+                // The log for processing each batch is now replaced by the progress bar
 
-            try {
-                List<Proposal> summarizedProposals = llmPort.summarizeProposals(batch);
-                summarizedProposals.forEach(proposalRepositoryPort::save);
-                log.info("Successfully summarized and saved batch {} of {}.", i + 1, batches.size());
+                try {
+                    List<Proposal> summarizedProposals = llmPort.summarizeProposals(batch);
+                    summarizedProposals.forEach(proposalRepositoryPort::save);
+                    
+                    // Update progress bar by the number of items successfully processed
+                    pb.stepBy(batch.size()); 
+                    
+                    log.debug("Successfully summarized and saved batch {} of {}.", i + 1, batches.size());
 
-                // On success, try to increase the batch size for the next run.
-                batchSizeManager.increaseBatchSize();
+                    // On success, try to increase the batch size for the next run.
+                    batchSizeManager.increaseBatchSize();
 
-            } catch (Exception e) {
-                // The LlmAdapter now handles decreasing the batch size and the service layer just logs the final failure.
-                log.error("Failed to process summarization batch {} of {}: {}", i + 1, batches.size(), e.getMessage());
+                } catch (Exception e) {
+                    // Step the progress bar even on failure to keep the count accurate
+                    pb.stepBy(batch.size());
+                    pb.pause(); // Pause the progress bar to print the error message cleanly
+                    log.error("Failed to process summarization batch {} of {}: {}", i + 1, batches.size(), e.getMessage());
+                    pb.resume(); // Resume the progress bar
+                }
             }
-        }
+        } // The progress bar is automatically closed here
 
         log.info("Finished proposal summarization process.");
     }

@@ -7,18 +7,42 @@
 |   |   |   |   |   |-- application
 |   |   |   |   |   |   |-- port
 |   |   |   |   |   |   |   |-- in
-|   |   |   |   |   |   |   |   |-- IngestProposalsUseCase.java
+|   |   |   |   |   |   |   |   |-- FetchProposalsUseCase.java
+|   |   |   |   |   |   |   |   |-- FetchVotingsUseCase.java
+|   |   |   |   |   |   |   |   |-- GetAnalysisJobUseCase.java
 |   |   |   |   |   |   |   |   |-- ScoreProposalsUseCase.java
+|   |   |   |   |   |   |   |   |-- StartAnalysisUseCase.java
+|   |   |   |   |   |   |   |   |-- SummarizeProposalsUseCase.java
 |   |   |   |   |   |   |   |-- out
+|   |   |   |   |   |   |   |   |-- AnalysisJobRepositoryPort.java
+|   |   |   |   |   |   |   |   |-- AnalysisResultRepositoryPort.java
 |   |   |   |   |   |   |   |   |-- CamaraApiPort.java
+|   |   |   |   |   |   |   |   |-- DeputyRepositoryPort.java
 |   |   |   |   |   |   |   |   |-- LlmPort.java
+|   |   |   |   |   |   |   |   |-- PartyRepositoryPort.java
 |   |   |   |   |   |   |   |   |-- ProposalRepositoryPort.java
+|   |   |   |   |   |   |   |   |-- VoteRepositoryPort.java
+|   |   |   |   |   |   |   |   |-- VotingRepositoryPort.java
 |   |   |   |   |   |   |-- service
-|   |   |   |   |   |   |   |-- ProposalIngestionService.java
+|   |   |   |   |   |   |   |-- OnDemandAnalysisService.java
+|   |   |   |   |   |   |   |-- ProposalFetchingService.java
 |   |   |   |   |   |   |   |-- ProposalScoringService.java
+|   |   |   |   |   |   |   |-- ProposalSummarizingService.java
+|   |   |   |   |   |   |   |-- VotingFetchingService.java
+|   |   |   |   |   |-- config
+|   |   |   |   |   |   |-- BatchSizeManager.java
+|   |   |   |   |   |   |-- LlmApiRetryExceptionPredicate.java
 |   |   |   |   |   |-- domain
 |   |   |   |   |   |   |-- model
+|   |   |   |   |   |   |   |-- AnalysisJob.java
+|   |   |   |   |   |   |   |-- AnalysisResult.java
+|   |   |   |   |   |   |   |-- Author.java
+|   |   |   |   |   |   |   |-- Deputy.java
+|   |   |   |   |   |   |   |-- Party.java
 |   |   |   |   |   |   |   |-- Proposal.java
+|   |   |   |   |   |   |   |-- Theme.java
+|   |   |   |   |   |   |   |-- Vote.java
+|   |   |   |   |   |   |   |-- Voting.java
 |   |   |   |   |   |   |-- service
 |   |   |   |   |   |   |   |-- ProposalValidator.java
 |   |   |   |   |   |-- infrastructure
@@ -27,27 +51,59 @@
 |   |   |   |   |   |   |   |   |-- scheduler
 |   |   |   |   |   |   |   |   |   |-- ProposalSyncScheduler.java
 |   |   |   |   |   |   |   |   |-- web
+|   |   |   |   |   |   |   |   |   |-- AnalysisController.java
 |   |   |   |   |   |   |   |   |   |-- ProposalController.java
 |   |   |   |   |   |   |   |-- out
 |   |   |   |   |   |   |   |   |-- camara
+|   |   |   |   |   |   |   |   |   |-- adapter
+|   |   |   |   |   |   |   |   |   |   |-- LocalDateAdapter.java
 |   |   |   |   |   |   |   |   |   |-- dto
+|   |   |   |   |   |   |   |   |   |   |-- CamaraAuthorDTO.java
+|   |   |   |   |   |   |   |   |   |   |-- CamaraDeputyDTO.java
+|   |   |   |   |   |   |   |   |   |   |-- CamaraPartyDTO.java
 |   |   |   |   |   |   |   |   |   |   |-- CamaraProposalDTO.java
+|   |   |   |   |   |   |   |   |   |   |-- CamaraThemeDTO.java
+|   |   |   |   |   |   |   |   |   |   |-- CamaraVoteDTO.java
+|   |   |   |   |   |   |   |   |   |   |-- CamaraVotingDTO.java
 |   |   |   |   |   |   |   |   |   |-- CamaraApiAdapter.java
 |   |   |   |   |   |   |   |   |-- llm
 |   |   |   |   |   |   |   |   |   |-- dto
-|   |   |   |   |   |   |   |   |   |   |-- ChatRequest.java
-|   |   |   |   |   |   |   |   |   |   |-- ChatResponse.java
-|   |   |   |   |   |   |   |   |   |   |-- EmentaInput.java
-|   |   |   |   |   |   |   |   |   |   |-- LlmRequest.java
-|   |   |   |   |   |   |   |   |   |   |-- LlmResponse.java
+|   |   |   |   |   |   |   |   |   |   |-- AnalysisPayload.java
+|   |   |   |   |   |   |   |   |   |   |-- CitationMetadata.java
+|   |   |   |   |   |   |   |   |   |   |-- LlmApiRequest.java
+|   |   |   |   |   |   |   |   |   |   |-- LlmApiResponse.java
 |   |   |   |   |   |   |   |   |   |   |-- LlmResult.java
 |   |   |   |   |   |   |   |   |   |   |-- Message.java
+|   |   |   |   |   |   |   |   |   |   |-- Prediction.java
+|   |   |   |   |   |   |   |   |   |   |-- PredictionResponse.java
+|   |   |   |   |   |   |   |   |   |   |-- SafetyAttributes.java
 |   |   |   |   |   |   |   |   |   |-- LlmAdapter.java
+|   |   |   |   |   |   |   |   |   |-- LlmMapper.java
 |   |   |   |   |   |   |   |   |-- persistence
+|   |   |   |   |   |   |   |   |   |-- AnalysisJobDocument.java
+|   |   |   |   |   |   |   |   |   |-- AnalysisJobMongoRepository.java
+|   |   |   |   |   |   |   |   |   |-- AnalysisJobRepositoryAdapter.java
+|   |   |   |   |   |   |   |   |   |-- AnalysisResultDocument.java
+|   |   |   |   |   |   |   |   |   |-- AnalysisResultMongoRepository.java
+|   |   |   |   |   |   |   |   |   |-- AnalysisResultRepositoryAdapter.java
+|   |   |   |   |   |   |   |   |   |-- AuthorDocument.java
+|   |   |   |   |   |   |   |   |   |-- DeputyDocument.java
+|   |   |   |   |   |   |   |   |   |-- DeputyMongoRepository.java
+|   |   |   |   |   |   |   |   |   |-- DeputyRepositoryAdapter.java
+|   |   |   |   |   |   |   |   |   |-- PartyDocument.java
+|   |   |   |   |   |   |   |   |   |-- PartyMongoRepository.java
+|   |   |   |   |   |   |   |   |   |-- PartyRepositoryAdapter.java
 |   |   |   |   |   |   |   |   |   |-- ProposalDocument.java
 |   |   |   |   |   |   |   |   |   |-- ProposalMapper.java
 |   |   |   |   |   |   |   |   |   |-- ProposalMongoRepository.java
 |   |   |   |   |   |   |   |   |   |-- ProposalRepositoryAdapter.java
+|   |   |   |   |   |   |   |   |   |-- ThemeDocument.java
+|   |   |   |   |   |   |   |   |   |-- VoteDocument.java
+|   |   |   |   |   |   |   |   |   |-- VoteMongoRepository.java
+|   |   |   |   |   |   |   |   |   |-- VoteRepositoryAdapter.java
+|   |   |   |   |   |   |   |   |   |-- VotingDocument.java
+|   |   |   |   |   |   |   |   |   |-- VotingMongoRepository.java
+|   |   |   |   |   |   |   |   |   |-- VotingRepositoryAdapter.java
 |   |   |   |   |   |   |-- config
 |   |   |   |   |   |   |   |-- AppConfig.java
 |   |   |   |   |   |   |   |-- PromptManager.java
@@ -64,20 +120,10 @@
 |   |   |   |-- templates
 |   |   |   |-- application.properties
 |   |   |   |-- logback.xml
-|   |-- test
-|   |   |-- java
-|   |   |   |-- com
-|   |   |   |   |-- prodash
-|   |   |   |   |   |-- application
-|   |   |   |   |   |   |-- service
-|   |   |   |   |   |   |   |-- ProposalIngestionServiceTest.java
-|   |   |   |   |   |   |   |-- ProposalScoringServiceTest.java
-|   |   |   |   |   |-- domain
-|   |   |   |   |   |   |-- service
-|   |   |   |   |   |   |   |-- ProposalValidatorTest.java
-|   |   |   |   |   |-- ProdashBackendApplicationTests.java
 |-- .gitattributes
 |-- .gitignore
+|-- create_files.ps1
+|-- folder_structure.txt
 |-- HELP.md
 |-- mvnw
 |-- mvnw.cmd

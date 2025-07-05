@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 
 @Component
@@ -36,7 +37,7 @@ public class ProposalSyncScheduler {
 
     @PostConstruct
     public void onStartup() {
-        log.info("Executando sincronização inicial na inicialização da aplicação...");
+        log.info("Hello Prodash! Starting full data synchronization on application startup.");
         runFullDataSync();
     }
 
@@ -46,25 +47,21 @@ public class ProposalSyncScheduler {
      */
     @Scheduled( cron = "${prodash.sync.cron}") // Use uma única propriedade para o ciclo completo
     public void runFullDataSync() {
-        log.info("====== INICIANDO SINCRONIZAÇÃO COMPLETA DE DADOS ======");
+        log.info("Innitializing full data synchronization at: {}", ZonedDateTime.now());
 
         // Passo 1: Buscar novas proposições e obter a lista de seus IDs.
-        log.info("--- Passo 1: Buscando novas proposições...");
+    
         List<String> newProposalIds = fetchProposalsUseCase.fetchNewProposals();
 
         // Passo 2: Buscar votações APENAS para as proposições que acabaram de ser adicionadas.
         if (newProposalIds != null && !newProposalIds.isEmpty()) {
-            log.info("--- Passo 2: Buscando votações para {} novas proposições...", newProposalIds.size());
             fetchVotingsUseCase.fetchNewVotingsForProposals(newProposalIds);
-        } else {
-            log.info("--- Passo 2: Nenhuma nova proposição encontrada, pulando a busca por votações.");
         }
 
-        // Passo 3: Enriquecer com LLM (sumarização e pontuação).
-        log.info("--- Passo 3: Sumarizando e pontuando propostas não processadas...");
         summarizeProposalsUseCase.summarizeUnsummarizedProposals();
         scoreProposalsUseCase.scoreProposals();
 
-        log.info("====== SINCRONIZAÇÃO COMPLETA DE DADOS FINALIZADA ======");
+        log.info("Full data synchronization completed at: {}", ZonedDateTime.now());
+        log.info("Data synchronization process finished successfully.");
     }
 }
