@@ -2,6 +2,8 @@ package com.prodash.infrastructure.adapter.out.persistence;
 
 import com.prodash.application.port.out.ProposalRepositoryPort;
 import com.prodash.domain.model.Proposal;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -27,10 +29,18 @@ public class ProposalRepositoryAdapter implements ProposalRepositoryPort {
     }
 
     @Override
-    public List<Proposal> findAll() {
-        return mongoRepository.findAll().stream()
-                .map(mapper::toDomain)
-                .collect(Collectors.toList());
+    public Page<Proposal> findAll(Pageable pageable) {
+        // Fetches a paginated list of documents and maps each page item to a domain object.
+        Page<ProposalDocument> documentPage = mongoRepository.findAll(pageable);
+        return documentPage.map(mapper::toDomain);
+    }
+
+    @Override
+    public Page<Proposal> findByEmentaContaining(String searchTerm, Pageable pageable) {
+        // Fetches a paginated list of documents matching the search term (case-insensitive)
+        // and maps the results to domain objects.
+        Page<ProposalDocument> documentPage = mongoRepository.findByEmentaContainingIgnoreCase(searchTerm, pageable);
+        return documentPage.map(mapper::toDomain);
     }
 
     @Override
@@ -53,9 +63,14 @@ public class ProposalRepositoryAdapter implements ProposalRepositoryPort {
     }
 
     @Override
-    public List<String> findAllIds() { 
+    public List<String> findAllIds() {
         return mongoRepository.findAllIds().stream()
                 .map(ProposalDocument::getId)
                 .collect(Collectors.toList());
     }
+
+    /*
+     * Note: The old `findAll()` method that returned a List<Proposal> is no longer
+     * defined in the port and can be removed, as we are now using pagination.
+     */
 }

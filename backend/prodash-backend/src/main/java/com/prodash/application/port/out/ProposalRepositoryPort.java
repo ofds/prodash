@@ -1,46 +1,39 @@
 package com.prodash.application.port.out;
 
 import com.prodash.domain.model.Proposal;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 import java.util.Optional;
 
 public interface ProposalRepositoryPort {
 
-    /**
-     * Saves a proposal to the repository.
-     * @param proposal The proposal to save.
-     * @return The saved proposal.
-     */
     Proposal save(Proposal proposal);
 
     /**
-     * Finds all proposals in the repository.
-     * @return A list of all proposals.
+     * Finds a paginated list of all proposals in the repository.
+     * @param pageable The pagination information.
+     * @return A paginated list of all proposals.
      */
-    List<Proposal> findAll();
+    Page<Proposal> findAll(Pageable pageable);
 
     /**
-     * Finds a proposal by its unique identifier.
-     * @param id The ID of the proposal.
-     * @return An Optional containing the proposal if found, otherwise empty.
+     * Finds proposals whose ementa (summary) contains the given search term, with pagination.
+     * @param searchTerm The term to search for within the proposal's ementa.
+     * @param pageable   The pagination information.
+     * @return A paginated list of matching proposals.
      */
+    Page<Proposal> findByEmentaContaining(String searchTerm, Pageable pageable);
+
     Optional<Proposal> findById(String id);
 
-    /**
-     * Finds all proposals that do not yet have a summary.
-     * @return A list of proposals with a null summary.
-     */
     List<Proposal> findBySummaryIsNull();
 
-    /**
-     * Finds all proposals that have a summary but do not yet have an impact score.
-     * @return A list of proposals with a non-null summary and a null impact score.
-     */
     List<Proposal> findBySummaryIsNotNullAndImpactScoreIsNull();
 
-    /**
-     * Finds all proposal IDs currently in the repository.
-     * @return A list of all existing proposal IDs.
-     */
     List<String> findAllIds();
+
+    // The old findAll() is no longer needed if you always paginate.
+    // List<Proposal> findAll();
 }

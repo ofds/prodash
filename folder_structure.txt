@@ -1,0 +1,699 @@
+﻿C:\Users\ofds2\OneDrive\Área de Trabalho\Codigos\prodash
+|-- backend
+|   |-- prodash-backend
+|   |   |-- src
+|   |   |   |-- main
+|   |   |   |   |-- java
+|   |   |   |   |   |-- com
+|   |   |   |   |   |   |-- prodash
+|   |   |   |   |   |   |   |-- application
+|   |   |   |   |   |   |   |   |-- port
+|   |   |   |   |   |   |   |   |   |-- in
+|   |   |   |   |   |   |   |   |   |   |-- FetchProposalsUseCase.java
+|   |   |   |   |   |   |   |   |   |   |-- FetchVotingsUseCase.java
+|   |   |   |   |   |   |   |   |   |   |-- GetAnalysisJobUseCase.java
+|   |   |   |   |   |   |   |   |   |   |-- ScoreProposalsUseCase.java
+|   |   |   |   |   |   |   |   |   |   |-- StartAnalysisUseCase.java
+|   |   |   |   |   |   |   |   |   |   |-- SummarizeProposalsUseCase.java
+|   |   |   |   |   |   |   |   |   |-- out
+|   |   |   |   |   |   |   |   |   |   |-- AnalysisJobRepositoryPort.java
+|   |   |   |   |   |   |   |   |   |   |-- AnalysisResultRepositoryPort.java
+|   |   |   |   |   |   |   |   |   |   |-- CamaraApiPort.java
+|   |   |   |   |   |   |   |   |   |   |-- DeputyRepositoryPort.java
+|   |   |   |   |   |   |   |   |   |   |-- LlmPort.java
+|   |   |   |   |   |   |   |   |   |   |-- PartyRepositoryPort.java
+|   |   |   |   |   |   |   |   |   |   |-- ProposalRepositoryPort.java
+|   |   |   |   |   |   |   |   |   |   |-- VoteRepositoryPort.java
+|   |   |   |   |   |   |   |   |   |   |-- VotingRepositoryPort.java
+|   |   |   |   |   |   |   |   |-- service
+|   |   |   |   |   |   |   |   |   |-- OnDemandAnalysisService.java
+|   |   |   |   |   |   |   |   |   |-- ProposalFetchingService.java
+|   |   |   |   |   |   |   |   |   |-- ProposalScoringService.java
+|   |   |   |   |   |   |   |   |   |-- ProposalSummarizingService.java
+|   |   |   |   |   |   |   |   |   |-- VotingFetchingService.java
+|   |   |   |   |   |   |   |-- config
+|   |   |   |   |   |   |   |   |-- BatchSizeManager.java
+|   |   |   |   |   |   |   |   |-- LlmApiRetryExceptionPredicate.java
+|   |   |   |   |   |   |   |-- domain
+|   |   |   |   |   |   |   |   |-- model
+|   |   |   |   |   |   |   |   |   |-- AnalysisJob.java
+|   |   |   |   |   |   |   |   |   |-- AnalysisResult.java
+|   |   |   |   |   |   |   |   |   |-- Author.java
+|   |   |   |   |   |   |   |   |   |-- Deputy.java
+|   |   |   |   |   |   |   |   |   |-- Party.java
+|   |   |   |   |   |   |   |   |   |-- Proposal.java
+|   |   |   |   |   |   |   |   |   |-- Theme.java
+|   |   |   |   |   |   |   |   |   |-- Vote.java
+|   |   |   |   |   |   |   |   |   |-- Voting.java
+|   |   |   |   |   |   |   |   |-- service
+|   |   |   |   |   |   |   |   |   |-- ProposalValidator.java
+|   |   |   |   |   |   |   |-- infrastructure
+|   |   |   |   |   |   |   |   |-- adapter
+|   |   |   |   |   |   |   |   |   |-- in
+|   |   |   |   |   |   |   |   |   |   |-- scheduler
+|   |   |   |   |   |   |   |   |   |   |   |-- ProposalSyncScheduler.java
+|   |   |   |   |   |   |   |   |   |   |-- web
+|   |   |   |   |   |   |   |   |   |   |   |-- AnalysisController.java
+|   |   |   |   |   |   |   |   |   |   |   |-- ProposalController.java
+|   |   |   |   |   |   |   |   |   |-- out
+|   |   |   |   |   |   |   |   |   |   |-- camara
+|   |   |   |   |   |   |   |   |   |   |   |-- adapter
+|   |   |   |   |   |   |   |   |   |   |   |   |-- LocalDateAdapter.java
+|   |   |   |   |   |   |   |   |   |   |   |-- dto
+|   |   |   |   |   |   |   |   |   |   |   |   |-- CamaraAuthorDTO.java
+|   |   |   |   |   |   |   |   |   |   |   |   |-- CamaraDeputyDTO.java
+|   |   |   |   |   |   |   |   |   |   |   |   |-- CamaraPartyDTO.java
+|   |   |   |   |   |   |   |   |   |   |   |   |-- CamaraProposalDTO.java
+|   |   |   |   |   |   |   |   |   |   |   |   |-- CamaraThemeDTO.java
+|   |   |   |   |   |   |   |   |   |   |   |   |-- CamaraVoteDTO.java
+|   |   |   |   |   |   |   |   |   |   |   |   |-- CamaraVotingDTO.java
+|   |   |   |   |   |   |   |   |   |   |   |-- CamaraApiAdapter.java
+|   |   |   |   |   |   |   |   |   |   |-- llm
+|   |   |   |   |   |   |   |   |   |   |   |-- dto
+|   |   |   |   |   |   |   |   |   |   |   |   |-- AnalysisPayload.java
+|   |   |   |   |   |   |   |   |   |   |   |   |-- CitationMetadata.java
+|   |   |   |   |   |   |   |   |   |   |   |   |-- LlmApiRequest.java
+|   |   |   |   |   |   |   |   |   |   |   |   |-- LlmApiResponse.java
+|   |   |   |   |   |   |   |   |   |   |   |   |-- LlmResult.java
+|   |   |   |   |   |   |   |   |   |   |   |   |-- Message.java
+|   |   |   |   |   |   |   |   |   |   |   |   |-- Prediction.java
+|   |   |   |   |   |   |   |   |   |   |   |   |-- PredictionResponse.java
+|   |   |   |   |   |   |   |   |   |   |   |   |-- SafetyAttributes.java
+|   |   |   |   |   |   |   |   |   |   |   |-- LlmAdapter.java
+|   |   |   |   |   |   |   |   |   |   |   |-- LlmMapper.java
+|   |   |   |   |   |   |   |   |   |   |-- persistence
+|   |   |   |   |   |   |   |   |   |   |   |-- AnalysisJobDocument.java
+|   |   |   |   |   |   |   |   |   |   |   |-- AnalysisJobMongoRepository.java
+|   |   |   |   |   |   |   |   |   |   |   |-- AnalysisJobRepositoryAdapter.java
+|   |   |   |   |   |   |   |   |   |   |   |-- AnalysisResultDocument.java
+|   |   |   |   |   |   |   |   |   |   |   |-- AnalysisResultMongoRepository.java
+|   |   |   |   |   |   |   |   |   |   |   |-- AnalysisResultRepositoryAdapter.java
+|   |   |   |   |   |   |   |   |   |   |   |-- AuthorDocument.java
+|   |   |   |   |   |   |   |   |   |   |   |-- DeputyDocument.java
+|   |   |   |   |   |   |   |   |   |   |   |-- DeputyMongoRepository.java
+|   |   |   |   |   |   |   |   |   |   |   |-- DeputyRepositoryAdapter.java
+|   |   |   |   |   |   |   |   |   |   |   |-- PartyDocument.java
+|   |   |   |   |   |   |   |   |   |   |   |-- PartyMongoRepository.java
+|   |   |   |   |   |   |   |   |   |   |   |-- PartyRepositoryAdapter.java
+|   |   |   |   |   |   |   |   |   |   |   |-- ProposalDocument.java
+|   |   |   |   |   |   |   |   |   |   |   |-- ProposalMapper.java
+|   |   |   |   |   |   |   |   |   |   |   |-- ProposalMongoRepository.java
+|   |   |   |   |   |   |   |   |   |   |   |-- ProposalRepositoryAdapter.java
+|   |   |   |   |   |   |   |   |   |   |   |-- ThemeDocument.java
+|   |   |   |   |   |   |   |   |   |   |   |-- VoteDocument.java
+|   |   |   |   |   |   |   |   |   |   |   |-- VoteMongoRepository.java
+|   |   |   |   |   |   |   |   |   |   |   |-- VoteRepositoryAdapter.java
+|   |   |   |   |   |   |   |   |   |   |   |-- VotingDocument.java
+|   |   |   |   |   |   |   |   |   |   |   |-- VotingMongoRepository.java
+|   |   |   |   |   |   |   |   |   |   |   |-- VotingRepositoryAdapter.java
+|   |   |   |   |   |   |   |   |-- config
+|   |   |   |   |   |   |   |   |   |-- AppConfig.java
+|   |   |   |   |   |   |   |   |   |-- PromptManager.java
+|   |   |   |   |   |   |   |-- ProdashBackendApplication.java
+|   |   |   |   |-- resources
+|   |   |   |   |   |-- prompts
+|   |   |   |   |   |   |-- batch_summary_v1.txt
+|   |   |   |   |   |   |-- daily_journal_v1.txt
+|   |   |   |   |   |   |-- impact_score_prompt.txt
+|   |   |   |   |   |   |-- proposal_analysis_v1.txt
+|   |   |   |   |   |   |-- proposal_impact_score_v1.txt
+|   |   |   |   |   |   |-- summarize_proposals_prompt.txt
+|   |   |   |   |   |-- static
+|   |   |   |   |   |-- templates
+|   |   |   |   |   |-- application.properties
+|   |   |   |   |   |-- logback.xml
+|   |   |-- .gitattributes
+|   |   |-- .gitignore
+|   |   |-- create_files.ps1
+|   |   |-- folder_structure.txt
+|   |   |-- HELP.md
+|   |   |-- mvnw
+|   |   |-- mvnw.cmd
+|   |   |-- pom.xml
+|   |   |-- printFolderStructure.ps1
+|-- frontend
+|   |-- .next
+|   |   |-- cache
+|   |   |   |-- swc
+|   |   |   |   |-- plugins
+|   |   |   |   |   |-- v7_windows_x86_64_9.0.0
+|   |   |   |-- webpack
+|   |   |   |   |-- client-development
+|   |   |   |   |   |-- 0.pack.gz
+|   |   |   |   |   |-- 1.pack.gz
+|   |   |   |   |   |-- 10.pack.gz
+|   |   |   |   |   |-- 11.pack.gz
+|   |   |   |   |   |-- 12.pack.gz
+|   |   |   |   |   |-- 13.pack.gz
+|   |   |   |   |   |-- 14.pack.gz
+|   |   |   |   |   |-- 15.pack.gz
+|   |   |   |   |   |-- 16.pack.gz
+|   |   |   |   |   |-- 17.pack.gz
+|   |   |   |   |   |-- 18.pack.gz
+|   |   |   |   |   |-- 19.pack.gz
+|   |   |   |   |   |-- 2.pack.gz
+|   |   |   |   |   |-- 20.pack.gz
+|   |   |   |   |   |-- 21.pack.gz
+|   |   |   |   |   |-- 22.pack.gz
+|   |   |   |   |   |-- 3.pack.gz
+|   |   |   |   |   |-- 4.pack.gz
+|   |   |   |   |   |-- 5.pack.gz
+|   |   |   |   |   |-- 6.pack.gz
+|   |   |   |   |   |-- 7.pack.gz
+|   |   |   |   |   |-- 8.pack.gz
+|   |   |   |   |   |-- 9.pack.gz
+|   |   |   |   |   |-- index.pack.gz
+|   |   |   |   |   |-- index.pack.gz.old
+|   |   |   |   |-- client-development-fallback
+|   |   |   |   |   |-- 0.pack.gz
+|   |   |   |   |   |-- index.pack.gz
+|   |   |   |   |-- server-development
+|   |   |   |   |   |-- 0.pack.gz
+|   |   |   |   |   |-- 1.pack.gz
+|   |   |   |   |   |-- 10.pack.gz
+|   |   |   |   |   |-- 11.pack.gz
+|   |   |   |   |   |-- 12.pack.gz
+|   |   |   |   |   |-- 13.pack.gz
+|   |   |   |   |   |-- 14.pack.gz
+|   |   |   |   |   |-- 15.pack.gz
+|   |   |   |   |   |-- 16.pack.gz
+|   |   |   |   |   |-- 17.pack.gz
+|   |   |   |   |   |-- 18.pack.gz
+|   |   |   |   |   |-- 19.pack.gz
+|   |   |   |   |   |-- 2.pack.gz
+|   |   |   |   |   |-- 20.pack.gz
+|   |   |   |   |   |-- 21.pack.gz
+|   |   |   |   |   |-- 22.pack.gz
+|   |   |   |   |   |-- 23.pack.gz
+|   |   |   |   |   |-- 3.pack.gz
+|   |   |   |   |   |-- 4.pack.gz
+|   |   |   |   |   |-- 5.pack.gz
+|   |   |   |   |   |-- 6.pack.gz
+|   |   |   |   |   |-- 7.pack.gz
+|   |   |   |   |   |-- 8.pack.gz
+|   |   |   |   |   |-- 9.pack.gz
+|   |   |   |   |   |-- index.pack.gz
+|   |   |   |   |   |-- index.pack.gz.old
+|   |   |   |-- .rscinfo
+|   |   |-- server
+|   |   |   |-- app
+|   |   |   |   |-- _not-found
+|   |   |   |   |   |-- page.js
+|   |   |   |   |   |-- page_client-reference-manifest.js
+|   |   |   |   |-- dashboard
+|   |   |   |   |   |-- customers
+|   |   |   |   |   |   |-- page.js
+|   |   |   |   |   |   |-- page_client-reference-manifest.js
+|   |   |   |   |   |-- page.js
+|   |   |   |   |   |-- page_client-reference-manifest.js
+|   |   |   |   |-- page.js
+|   |   |   |   |-- page_client-reference-manifest.js
+|   |   |   |-- vendor-chunks
+|   |   |   |   |-- @babel.js
+|   |   |   |   |-- @emotion.js
+|   |   |   |   |-- @mui.js
+|   |   |   |   |-- @phosphor-icons.js
+|   |   |   |   |-- @popperjs.js
+|   |   |   |   |-- @swc.js
+|   |   |   |   |-- asynckit.js
+|   |   |   |   |-- axios.js
+|   |   |   |   |-- call-bind-apply-helpers.js
+|   |   |   |   |-- clsx.js
+|   |   |   |   |-- combined-stream.js
+|   |   |   |   |-- dayjs.js
+|   |   |   |   |-- debug.js
+|   |   |   |   |-- delayed-stream.js
+|   |   |   |   |-- dunder-proto.js
+|   |   |   |   |-- es-define-property.js
+|   |   |   |   |-- es-errors.js
+|   |   |   |   |-- es-object-atoms.js
+|   |   |   |   |-- es-set-tostringtag.js
+|   |   |   |   |-- follow-redirects.js
+|   |   |   |   |-- form-data.js
+|   |   |   |   |-- function-bind.js
+|   |   |   |   |-- get-intrinsic.js
+|   |   |   |   |-- get-proto.js
+|   |   |   |   |-- goober.js
+|   |   |   |   |-- gopd.js
+|   |   |   |   |-- has-flag.js
+|   |   |   |   |-- hasown.js
+|   |   |   |   |-- has-symbols.js
+|   |   |   |   |-- has-tostringtag.js
+|   |   |   |   |-- hoist-non-react-statics.js
+|   |   |   |   |-- math-intrinsics.js
+|   |   |   |   |-- mime-db.js
+|   |   |   |   |-- mime-types.js
+|   |   |   |   |-- ms.js
+|   |   |   |   |-- next.js
+|   |   |   |   |-- notistack.js
+|   |   |   |   |-- object-assign.js
+|   |   |   |   |-- prop-types.js
+|   |   |   |   |-- proxy-from-env.js
+|   |   |   |   |-- react-is.js
+|   |   |   |   |-- react-transition-group.js
+|   |   |   |   |-- stylis.js
+|   |   |   |   |-- supports-color.js
+|   |   |   |-- app-paths-manifest.json
+|   |   |   |-- interception-route-rewrite-manifest.js
+|   |   |   |-- middleware-build-manifest.js
+|   |   |   |-- middleware-manifest.json
+|   |   |   |-- middleware-react-loadable-manifest.js
+|   |   |   |-- next-font-manifest.js
+|   |   |   |-- next-font-manifest.json
+|   |   |   |-- pages-manifest.json
+|   |   |   |-- server-reference-manifest.js
+|   |   |   |-- server-reference-manifest.json
+|   |   |   |-- webpack-runtime.js
+|   |   |-- static
+|   |   |   |-- chunks
+|   |   |   |   |-- app
+|   |   |   |   |   |-- _not-found
+|   |   |   |   |   |   |-- page.js
+|   |   |   |   |   |-- dashboard
+|   |   |   |   |   |   |-- customers
+|   |   |   |   |   |   |   |-- page.js
+|   |   |   |   |   |   |-- layout.js
+|   |   |   |   |   |   |-- page.js
+|   |   |   |   |   |-- layout.js
+|   |   |   |   |   |-- not-found.js
+|   |   |   |   |   |-- page.js
+|   |   |   |   |-- _app-pages-browser_node_modules_next_dist_client_dev_noop-turbopack-hmr_js.js
+|   |   |   |   |-- app-pages-internals.js
+|   |   |   |   |-- main-app.js
+|   |   |   |   |-- polyfills.js
+|   |   |   |   |-- webpack.js
+|   |   |   |-- css
+|   |   |   |   |-- app
+|   |   |   |   |   |-- layout.css
+|   |   |   |-- development
+|   |   |   |   |-- _buildManifest.js
+|   |   |   |   |-- _ssgManifest.js
+|   |   |   |-- media
+|   |   |   |   |-- inter-cyrillic-100-normal.6e2d10bc.woff
+|   |   |   |   |-- inter-cyrillic-100-normal.dc90b237.woff2
+|   |   |   |   |-- inter-cyrillic-200-normal.3ec77e79.woff
+|   |   |   |   |-- inter-cyrillic-200-normal.3f3a159e.woff2
+|   |   |   |   |-- inter-cyrillic-300-normal.12da1343.woff
+|   |   |   |   |-- inter-cyrillic-300-normal.7335a360.woff2
+|   |   |   |   |-- inter-cyrillic-400-normal.155d25e8.woff
+|   |   |   |   |-- inter-cyrillic-400-normal.547767ef.woff2
+|   |   |   |   |-- inter-cyrillic-500-normal.5ec9103b.woff2
+|   |   |   |   |-- inter-cyrillic-500-normal.6b846965.woff
+|   |   |   |   |-- inter-cyrillic-600-normal.1cf09d31.woff
+|   |   |   |   |-- inter-cyrillic-600-normal.8c69e1bb.woff2
+|   |   |   |   |-- inter-cyrillic-700-normal.3ae9e273.woff
+|   |   |   |   |-- inter-cyrillic-700-normal.9ce56ec3.woff2
+|   |   |   |   |-- inter-cyrillic-800-normal.0e80493d.woff2
+|   |   |   |   |-- inter-cyrillic-800-normal.cdf514bc.woff
+|   |   |   |   |-- inter-cyrillic-900-normal.aa7ab13c.woff2
+|   |   |   |   |-- inter-cyrillic-900-normal.f837a574.woff
+|   |   |   |   |-- inter-cyrillic-ext-100-normal.00fb0365.woff
+|   |   |   |   |-- inter-cyrillic-ext-100-normal.0e1aec1d.woff2
+|   |   |   |   |-- inter-cyrillic-ext-200-normal.43d8878a.woff2
+|   |   |   |   |-- inter-cyrillic-ext-200-normal.e3c3b77a.woff
+|   |   |   |   |-- inter-cyrillic-ext-300-normal.5df3b45f.woff2
+|   |   |   |   |-- inter-cyrillic-ext-300-normal.b3808c15.woff
+|   |   |   |   |-- inter-cyrillic-ext-400-normal.2440d5f8.woff2
+|   |   |   |   |-- inter-cyrillic-ext-400-normal.2f7e2d5f.woff
+|   |   |   |   |-- inter-cyrillic-ext-500-normal.d112b22c.woff
+|   |   |   |   |-- inter-cyrillic-ext-500-normal.d8f535fc.woff2
+|   |   |   |   |-- inter-cyrillic-ext-600-normal.7817fa57.woff
+|   |   |   |   |-- inter-cyrillic-ext-600-normal.dd95b020.woff2
+|   |   |   |   |-- inter-cyrillic-ext-700-normal.94d4fa7d.woff2
+|   |   |   |   |-- inter-cyrillic-ext-700-normal.a454a69f.woff
+|   |   |   |   |-- inter-cyrillic-ext-800-normal.1c9e8f72.woff2
+|   |   |   |   |-- inter-cyrillic-ext-800-normal.5dcea30b.woff
+|   |   |   |   |-- inter-cyrillic-ext-900-normal.92c524b9.woff
+|   |   |   |   |-- inter-cyrillic-ext-900-normal.b8d1a9c4.woff2
+|   |   |   |   |-- inter-greek-100-normal.4601ceba.woff2
+|   |   |   |   |-- inter-greek-100-normal.7caa71fa.woff
+|   |   |   |   |-- inter-greek-200-normal.1c2ba6ab.woff
+|   |   |   |   |-- inter-greek-200-normal.d64aa322.woff2
+|   |   |   |   |-- inter-greek-300-normal.14123a0c.woff2
+|   |   |   |   |-- inter-greek-300-normal.1d22835e.woff
+|   |   |   |   |-- inter-greek-400-normal.573bacd1.woff2
+|   |   |   |   |-- inter-greek-400-normal.c753a7cd.woff
+|   |   |   |   |-- inter-greek-500-normal.947d4ab3.woff2
+|   |   |   |   |-- inter-greek-500-normal.e66131f5.woff
+|   |   |   |   |-- inter-greek-600-normal.ee808ffe.woff2
+|   |   |   |   |-- inter-greek-600-normal.f2d09137.woff
+|   |   |   |   |-- inter-greek-700-normal.7cdea0fb.woff
+|   |   |   |   |-- inter-greek-700-normal.a094cf2b.woff2
+|   |   |   |   |-- inter-greek-800-normal.5f113010.woff
+|   |   |   |   |-- inter-greek-800-normal.fe474d33.woff2
+|   |   |   |   |-- inter-greek-900-normal.22ac87d8.woff2
+|   |   |   |   |-- inter-greek-900-normal.c3644e59.woff
+|   |   |   |   |-- inter-greek-ext-100-normal.3d999e5e.woff2
+|   |   |   |   |-- inter-greek-ext-100-normal.923694fe.woff
+|   |   |   |   |-- inter-greek-ext-200-normal.2d7a6efc.woff
+|   |   |   |   |-- inter-greek-ext-200-normal.64dcccdd.woff2
+|   |   |   |   |-- inter-greek-ext-300-normal.65885ce4.woff
+|   |   |   |   |-- inter-greek-ext-300-normal.7b467784.woff2
+|   |   |   |   |-- inter-greek-ext-400-normal.f18bf187.woff
+|   |   |   |   |-- inter-greek-ext-400-normal.f8992900.woff2
+|   |   |   |   |-- inter-greek-ext-500-normal.15398cd6.woff
+|   |   |   |   |-- inter-greek-ext-500-normal.5fe403a5.woff2
+|   |   |   |   |-- inter-greek-ext-600-normal.d05f940f.woff2
+|   |   |   |   |-- inter-greek-ext-600-normal.e7a185cc.woff
+|   |   |   |   |-- inter-greek-ext-700-normal.411652e2.woff2
+|   |   |   |   |-- inter-greek-ext-700-normal.b9d71c77.woff
+|   |   |   |   |-- inter-greek-ext-800-normal.616ca182.woff
+|   |   |   |   |-- inter-greek-ext-800-normal.95d04d18.woff2
+|   |   |   |   |-- inter-greek-ext-900-normal.3c30e30e.woff2
+|   |   |   |   |-- inter-greek-ext-900-normal.ec6bc55c.woff
+|   |   |   |   |-- inter-latin-100-normal.8b21b22e.woff
+|   |   |   |   |-- inter-latin-100-normal.b447814d.woff2
+|   |   |   |   |-- inter-latin-200-normal.3c4d66c6.woff
+|   |   |   |   |-- inter-latin-200-normal.96be0801.woff2
+|   |   |   |   |-- inter-latin-300-normal.15fb600d.woff2
+|   |   |   |   |-- inter-latin-300-normal.6f95f590.woff
+|   |   |   |   |-- inter-latin-400-normal.2c7a775c.woff
+|   |   |   |   |-- inter-latin-400-normal.ef6d3f52.woff2
+|   |   |   |   |-- inter-latin-500-normal.b7b43ace.woff2
+|   |   |   |   |-- inter-latin-500-normal.cb4c8ceb.woff
+|   |   |   |   |-- inter-latin-600-normal.8fb1a964.woff2
+|   |   |   |   |-- inter-latin-600-normal.ce0f5f43.woff
+|   |   |   |   |-- inter-latin-700-normal.231cfd86.woff
+|   |   |   |   |-- inter-latin-700-normal.7c3e92e6.woff2
+|   |   |   |   |-- inter-latin-800-normal.95045d68.woff2
+|   |   |   |   |-- inter-latin-800-normal.cbc721b6.woff
+|   |   |   |   |-- inter-latin-900-normal.2a8028ec.woff2
+|   |   |   |   |-- inter-latin-900-normal.fa252135.woff
+|   |   |   |   |-- inter-latin-ext-100-normal.804ed838.woff
+|   |   |   |   |-- inter-latin-ext-100-normal.d357eb40.woff2
+|   |   |   |   |-- inter-latin-ext-200-normal.59806fb7.woff2
+|   |   |   |   |-- inter-latin-ext-200-normal.ba502c1c.woff
+|   |   |   |   |-- inter-latin-ext-300-normal.167cc8c9.woff2
+|   |   |   |   |-- inter-latin-ext-300-normal.f695be66.woff
+|   |   |   |   |-- inter-latin-ext-400-normal.32a25442.woff2
+|   |   |   |   |-- inter-latin-ext-400-normal.4edcaace.woff
+|   |   |   |   |-- inter-latin-ext-500-normal.a19a84a6.woff
+|   |   |   |   |-- inter-latin-ext-500-normal.d9b491de.woff2
+|   |   |   |   |-- inter-latin-ext-600-normal.38b075d8.woff2
+|   |   |   |   |-- inter-latin-ext-600-normal.49faa47a.woff
+|   |   |   |   |-- inter-latin-ext-700-normal.bf50e2d6.woff
+|   |   |   |   |-- inter-latin-ext-700-normal.eb37b59d.woff2
+|   |   |   |   |-- inter-latin-ext-800-normal.25d8eff3.woff2
+|   |   |   |   |-- inter-latin-ext-800-normal.3359cc45.woff
+|   |   |   |   |-- inter-latin-ext-900-normal.0efdb307.woff
+|   |   |   |   |-- inter-latin-ext-900-normal.9c0fc2c7.woff2
+|   |   |   |   |-- inter-vietnamese-100-normal.03f887b7.woff2
+|   |   |   |   |-- inter-vietnamese-100-normal.25aade62.woff
+|   |   |   |   |-- inter-vietnamese-200-normal.880f4080.woff
+|   |   |   |   |-- inter-vietnamese-200-normal.d4b1139a.woff2
+|   |   |   |   |-- inter-vietnamese-300-normal.aad496d8.woff
+|   |   |   |   |-- inter-vietnamese-300-normal.ad9ef503.woff2
+|   |   |   |   |-- inter-vietnamese-400-normal.a9dd2faf.woff
+|   |   |   |   |-- inter-vietnamese-400-normal.de4fc44f.woff2
+|   |   |   |   |-- inter-vietnamese-500-normal.7c0a695f.woff2
+|   |   |   |   |-- inter-vietnamese-500-normal.a3a73b95.woff
+|   |   |   |   |-- inter-vietnamese-600-normal.9d518599.woff2
+|   |   |   |   |-- inter-vietnamese-600-normal.c5ce3fcb.woff
+|   |   |   |   |-- inter-vietnamese-700-normal.c48feea2.woff2
+|   |   |   |   |-- inter-vietnamese-700-normal.d9926008.woff
+|   |   |   |   |-- inter-vietnamese-800-normal.922627b4.woff2
+|   |   |   |   |-- inter-vietnamese-800-normal.d7992817.woff
+|   |   |   |   |-- inter-vietnamese-900-normal.2b782045.woff
+|   |   |   |   |-- inter-vietnamese-900-normal.e639b65a.woff2
+|   |   |   |   |-- plus-jakarta-sans-cyrillic-ext-600-normal.861e6b71.woff
+|   |   |   |   |-- plus-jakarta-sans-cyrillic-ext-600-normal.97e8d498.woff2
+|   |   |   |   |-- plus-jakarta-sans-cyrillic-ext-700-normal.0be560bf.woff2
+|   |   |   |   |-- plus-jakarta-sans-cyrillic-ext-700-normal.ebec912a.woff
+|   |   |   |   |-- plus-jakarta-sans-latin-600-normal.226f862d.woff2
+|   |   |   |   |-- plus-jakarta-sans-latin-600-normal.2b3be788.woff
+|   |   |   |   |-- plus-jakarta-sans-latin-700-normal.2eba9731.woff
+|   |   |   |   |-- plus-jakarta-sans-latin-700-normal.d84247b5.woff2
+|   |   |   |   |-- plus-jakarta-sans-latin-ext-600-normal.52610491.woff2
+|   |   |   |   |-- plus-jakarta-sans-latin-ext-600-normal.a617e118.woff
+|   |   |   |   |-- plus-jakarta-sans-latin-ext-700-normal.327511cd.woff
+|   |   |   |   |-- plus-jakarta-sans-latin-ext-700-normal.bfbe2057.woff2
+|   |   |   |   |-- plus-jakarta-sans-vietnamese-600-normal.7f6ebfd7.woff
+|   |   |   |   |-- plus-jakarta-sans-vietnamese-600-normal.aed17cb6.woff2
+|   |   |   |   |-- plus-jakarta-sans-vietnamese-700-normal.74c6a6ab.woff2
+|   |   |   |   |-- plus-jakarta-sans-vietnamese-700-normal.b2776741.woff
+|   |   |   |   |-- roboto-mono-cyrillic-300-normal.0602f4fc.woff2
+|   |   |   |   |-- roboto-mono-cyrillic-300-normal.09f04aed.woff
+|   |   |   |   |-- roboto-mono-cyrillic-400-normal.3596b099.woff
+|   |   |   |   |-- roboto-mono-cyrillic-400-normal.e3924e7b.woff2
+|   |   |   |   |-- roboto-mono-cyrillic-ext-300-normal.a16a13aa.woff2
+|   |   |   |   |-- roboto-mono-cyrillic-ext-300-normal.f13b6568.woff
+|   |   |   |   |-- roboto-mono-cyrillic-ext-400-normal.49f8f394.woff2
+|   |   |   |   |-- roboto-mono-cyrillic-ext-400-normal.b3be1dbd.woff
+|   |   |   |   |-- roboto-mono-greek-300-normal.34c1fe3c.woff2
+|   |   |   |   |-- roboto-mono-greek-300-normal.6fe65a5f.woff
+|   |   |   |   |-- roboto-mono-greek-400-normal.d7d7f7a8.woff2
+|   |   |   |   |-- roboto-mono-greek-400-normal.e63268a8.woff
+|   |   |   |   |-- roboto-mono-latin-300-normal.4a116ad9.woff2
+|   |   |   |   |-- roboto-mono-latin-300-normal.971cd6ae.woff
+|   |   |   |   |-- roboto-mono-latin-400-normal.19c94aee.woff2
+|   |   |   |   |-- roboto-mono-latin-400-normal.310dfc7a.woff
+|   |   |   |   |-- roboto-mono-latin-ext-300-normal.7d197fee.woff2
+|   |   |   |   |-- roboto-mono-latin-ext-300-normal.ba3cf538.woff
+|   |   |   |   |-- roboto-mono-latin-ext-400-normal.e113fb2e.woff
+|   |   |   |   |-- roboto-mono-latin-ext-400-normal.f591ca2d.woff2
+|   |   |   |   |-- roboto-mono-vietnamese-300-normal.32122038.woff
+|   |   |   |   |-- roboto-mono-vietnamese-300-normal.406e98ab.woff2
+|   |   |   |   |-- roboto-mono-vietnamese-400-normal.6aabeec8.woff
+|   |   |   |   |-- roboto-mono-vietnamese-400-normal.ab223d42.woff2
+|   |   |   |-- webpack
+|   |   |   |   |-- app
+|   |   |   |   |   |-- dashboard
+|   |   |   |   |   |   |-- layout.2078ac03cc7f57aa.hot-update.js
+|   |   |   |   |   |   |-- layout.b9546bd7c490ff8a.hot-update.js
+|   |   |   |   |   |   |-- layout.cd8906b903cf1431.hot-update.js
+|   |   |   |   |   |   |-- layout.df62a133a047800b.hot-update.js
+|   |   |   |   |   |   |-- layout.eff5f75a7bbd65c0.hot-update.js
+|   |   |   |   |   |   |-- page.136755ea4c524892.hot-update.js
+|   |   |   |   |   |   |-- page.137d79c3180b74b2.hot-update.js
+|   |   |   |   |   |   |-- page.2078ac03cc7f57aa.hot-update.js
+|   |   |   |   |   |   |-- page.3bbb5a964eb7fb6d.hot-update.js
+|   |   |   |   |   |   |-- page.650b6b1f689ec30e.hot-update.js
+|   |   |   |   |   |   |-- page.d73358f595b0c84a.hot-update.js
+|   |   |   |   |   |   |-- page.e79f36e6adc5418b.hot-update.js
+|   |   |   |   |   |   |-- page.eaa64dee3219a9ed.hot-update.js
+|   |   |   |   |   |   |-- page.f6302df540973dc4.hot-update.js
+|   |   |   |   |   |-- layout.2078ac03cc7f57aa.hot-update.js
+|   |   |   |   |-- 099d519e5b2d2cad.webpack.hot-update.json
+|   |   |   |   |-- 136755ea4c524892.webpack.hot-update.json
+|   |   |   |   |-- 137d79c3180b74b2.webpack.hot-update.json
+|   |   |   |   |-- 2078ac03cc7f57aa.webpack.hot-update.json
+|   |   |   |   |-- 3bbb5a964eb7fb6d.webpack.hot-update.json
+|   |   |   |   |-- 633457081244afec._.hot-update.json
+|   |   |   |   |-- 650b6b1f689ec30e.webpack.hot-update.json
+|   |   |   |   |-- 7630bc671e479c47.webpack.hot-update.json
+|   |   |   |   |-- 8dfb0434d5164d0b.webpack.hot-update.json
+|   |   |   |   |-- b9546bd7c490ff8a.webpack.hot-update.json
+|   |   |   |   |-- cd8906b903cf1431.webpack.hot-update.json
+|   |   |   |   |-- d73358f595b0c84a.webpack.hot-update.json
+|   |   |   |   |-- df62a133a047800b.webpack.hot-update.json
+|   |   |   |   |-- e79f36e6adc5418b.webpack.hot-update.json
+|   |   |   |   |-- eaa64dee3219a9ed.webpack.hot-update.json
+|   |   |   |   |-- eff5f75a7bbd65c0.webpack.hot-update.json
+|   |   |   |   |-- f6302df540973dc4.webpack.hot-update.json
+|   |   |   |   |-- webpack.099d519e5b2d2cad.hot-update.js
+|   |   |   |   |-- webpack.136755ea4c524892.hot-update.js
+|   |   |   |   |-- webpack.137d79c3180b74b2.hot-update.js
+|   |   |   |   |-- webpack.2078ac03cc7f57aa.hot-update.js
+|   |   |   |   |-- webpack.3bbb5a964eb7fb6d.hot-update.js
+|   |   |   |   |-- webpack.650b6b1f689ec30e.hot-update.js
+|   |   |   |   |-- webpack.7630bc671e479c47.hot-update.js
+|   |   |   |   |-- webpack.8dfb0434d5164d0b.hot-update.js
+|   |   |   |   |-- webpack.b9546bd7c490ff8a.hot-update.js
+|   |   |   |   |-- webpack.cd8906b903cf1431.hot-update.js
+|   |   |   |   |-- webpack.d73358f595b0c84a.hot-update.js
+|   |   |   |   |-- webpack.df62a133a047800b.hot-update.js
+|   |   |   |   |-- webpack.e79f36e6adc5418b.hot-update.js
+|   |   |   |   |-- webpack.eaa64dee3219a9ed.hot-update.js
+|   |   |   |   |-- webpack.eff5f75a7bbd65c0.hot-update.js
+|   |   |   |   |-- webpack.f6302df540973dc4.hot-update.js
+|   |   |-- types
+|   |   |   |-- app
+|   |   |   |   |-- dashboard
+|   |   |   |   |   |-- customers
+|   |   |   |   |   |   |-- page.ts
+|   |   |   |   |   |-- layout.ts
+|   |   |   |   |   |-- page.ts
+|   |   |   |   |-- layout.ts
+|   |   |   |   |-- page.ts
+|   |   |   |-- cache-life.d.ts
+|   |   |   |-- package.json
+|   |   |-- app-build-manifest.json
+|   |   |-- build-manifest.json
+|   |   |-- package.json
+|   |   |-- react-loadable-manifest.json
+|   |   |-- trace
+|   |-- public
+|   |   |-- assets
+|   |   |   |-- auth-widgets.png
+|   |   |   |-- avatar.png
+|   |   |   |-- avatar-1.png
+|   |   |   |-- avatar-10.png
+|   |   |   |-- avatar-11.png
+|   |   |   |-- avatar-2.png
+|   |   |   |-- avatar-3.png
+|   |   |   |-- avatar-4.png
+|   |   |   |-- avatar-5.png
+|   |   |   |-- avatar-6.png
+|   |   |   |-- avatar-7.png
+|   |   |   |-- avatar-8.png
+|   |   |   |-- avatar-9.png
+|   |   |   |-- devias-kit-pro.png
+|   |   |   |-- error-401.png
+|   |   |   |-- error-404.png
+|   |   |   |-- error-500.png
+|   |   |   |-- logo.svg
+|   |   |   |-- logo--dark.svg
+|   |   |   |-- logo-dropbox.png
+|   |   |   |-- logo-emblem.svg
+|   |   |   |-- logo-emblem--dark.svg
+|   |   |   |-- logo-github.png
+|   |   |   |-- logo-lyft.png
+|   |   |   |-- logo-medium.png
+|   |   |   |-- logo-slack.png
+|   |   |   |-- logo-squarespace.png
+|   |   |   |-- product-1.png
+|   |   |   |-- product-2.png
+|   |   |   |-- product-3.png
+|   |   |   |-- product-4.png
+|   |   |   |-- product-5.png
+|   |   |   |-- thumbnail.png
+|   |   |-- favicon.ico
+|   |-- src
+|   |   |-- app
+|   |   |   |-- auth
+|   |   |   |   |-- reset-password
+|   |   |   |   |   |-- page.tsx
+|   |   |   |   |-- sign-in
+|   |   |   |   |   |-- page.tsx
+|   |   |   |   |-- sign-up
+|   |   |   |   |   |-- page.tsx
+|   |   |   |-- dashboard
+|   |   |   |   |-- account
+|   |   |   |   |   |-- page.tsx
+|   |   |   |   |-- customers
+|   |   |   |   |   |-- page.tsx
+|   |   |   |   |-- integrations
+|   |   |   |   |   |-- page.tsx
+|   |   |   |   |-- settings
+|   |   |   |   |   |-- page.tsx
+|   |   |   |   |-- layout.tsx
+|   |   |   |   |-- overview.tsx
+|   |   |   |   |-- page.tsx
+|   |   |   |-- errors
+|   |   |   |   |-- not-found
+|   |   |   |   |   |-- page.tsx
+|   |   |   |-- layout.tsx
+|   |   |   |-- not-found.tsx
+|   |   |   |-- page.tsx
+|   |   |-- components
+|   |   |   |-- auth
+|   |   |   |   |-- auth-guard.tsx
+|   |   |   |   |-- guest-guard.tsx
+|   |   |   |   |-- layout.tsx
+|   |   |   |   |-- reset-password-form.tsx
+|   |   |   |   |-- sign-in-form.tsx
+|   |   |   |   |-- sign-up-form.tsx
+|   |   |   |-- core
+|   |   |   |   |-- theme-provider
+|   |   |   |   |   |-- emotion-cache.tsx
+|   |   |   |   |   |-- theme-provider.tsx
+|   |   |   |   |-- chart.tsx
+|   |   |   |   |-- localization-provider.tsx
+|   |   |   |   |-- logo.tsx
+|   |   |   |   |-- no-ssr.tsx
+|   |   |   |-- dashboard
+|   |   |   |   |-- account
+|   |   |   |   |   |-- account-details-form.tsx
+|   |   |   |   |   |-- account-info.tsx
+|   |   |   |   |-- analysis
+|   |   |   |   |-- customer
+|   |   |   |   |   |-- customers-filters.tsx
+|   |   |   |   |   |-- customers-table.tsx
+|   |   |   |   |-- integrations
+|   |   |   |   |   |-- integrations-card.tsx
+|   |   |   |   |   |-- integrations-filters.tsx
+|   |   |   |   |-- layout
+|   |   |   |   |   |-- config.ts
+|   |   |   |   |   |-- main-nav.tsx
+|   |   |   |   |   |-- mobile-nav.tsx
+|   |   |   |   |   |-- nav-icons.tsx
+|   |   |   |   |   |-- side-nav.tsx
+|   |   |   |   |   |-- user-popover.tsx
+|   |   |   |   |-- overview
+|   |   |   |   |   |-- budget.tsx
+|   |   |   |   |   |-- latest-orders.tsx
+|   |   |   |   |   |-- latest-products.tsx
+|   |   |   |   |   |-- proposals-table.tsx
+|   |   |   |   |   |-- sales.tsx
+|   |   |   |   |   |-- tasks-progress.tsx
+|   |   |   |   |   |-- total-customers.tsx
+|   |   |   |   |   |-- total-profit.tsx
+|   |   |   |   |   |-- traffic.tsx
+|   |   |   |   |-- results
+|   |   |   |   |   |-- [jobId]
+|   |   |   |   |-- settings
+|   |   |   |   |   |-- notifications.tsx
+|   |   |   |   |   |-- update-password-form.tsx
+|   |   |-- contexts
+|   |   |   |-- user-context.tsx
+|   |   |-- hooks
+|   |   |   |-- use-popover.ts
+|   |   |   |-- use-selection.ts
+|   |   |   |-- use-user.ts
+|   |   |-- lib
+|   |   |   |-- auth
+|   |   |   |   |-- client.ts
+|   |   |   |-- default-logger.ts
+|   |   |   |-- get-site-url.ts
+|   |   |   |-- is-nav-item-active.ts
+|   |   |   |-- logger.ts
+|   |   |-- services
+|   |   |   |-- api.js
+|   |   |-- styles
+|   |   |   |-- theme
+|   |   |   |   |-- components
+|   |   |   |   |   |-- avatar.tsx
+|   |   |   |   |   |-- button.tsx
+|   |   |   |   |   |-- card.tsx
+|   |   |   |   |   |-- card-content.tsx
+|   |   |   |   |   |-- card-header.tsx
+|   |   |   |   |   |-- components.tsx
+|   |   |   |   |   |-- link.tsx
+|   |   |   |   |   |-- stack.tsx
+|   |   |   |   |   |-- tab.tsx
+|   |   |   |   |   |-- table-body.tsx
+|   |   |   |   |   |-- table-cell.tsx
+|   |   |   |   |   |-- table-head.tsx
+|   |   |   |   |-- colors.ts
+|   |   |   |   |-- color-schemes.ts
+|   |   |   |   |-- create-theme.ts
+|   |   |   |   |-- shadows.ts
+|   |   |   |   |-- theme.d.ts
+|   |   |   |   |-- types.d.ts
+|   |   |   |   |-- typography.ts
+|   |   |   |-- global.css
+|   |   |-- types
+|   |   |   |-- nav.d.ts
+|   |   |   |-- user.ts
+|   |   |-- config.ts
+|   |   |-- paths.ts
+|   |-- .editorconfig
+|   |-- .env
+|   |-- .gitattributes
+|   |-- .gitignore
+|   |-- .prettierignore
+|   |-- CHANGELOG.md
+|   |-- eslint.config.mjs
+|   |-- LICENSE.md
+|   |-- next.config.mjs
+|   |-- next-env.d.ts
+|   |-- package.json
+|   |-- package-lock.json
+|   |-- pnpm-lock.yaml
+|   |-- prettier.config.mjs
+|   |-- README.md
+|   |-- tsconfig.json
+|-- .gitignore
+|-- folder_structure.txt
+|-- printFolderStructure.ps1
+|-- README.md
