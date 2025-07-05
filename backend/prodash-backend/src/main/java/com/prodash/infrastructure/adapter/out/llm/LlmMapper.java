@@ -1,6 +1,7 @@
 package com.prodash.infrastructure.adapter.out.llm;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import com.prodash.domain.model.Proposal;
@@ -26,7 +27,7 @@ import java.util.stream.Collectors;
 public class LlmMapper {
 
     private static final Logger log = LoggerFactory.getLogger(LlmMapper.class);
-    private final Gson gson = new Gson();
+    private final Gson gson = new GsonBuilder().setLenient().create();
     private final PromptManager promptManager;
     
     // Use constants for prompt names to avoid typos
