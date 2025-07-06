@@ -100,13 +100,13 @@ public class LlmMapper {
         // 2. Create a Map of the results from the LLM, keyed by the proposal's ID.
         // CORRECTION: Using the correct getter `getProposalId()`.
         Map<String, LlmResult> resultMap = llmResults.stream()
-                .filter(r -> r.getId() != null && !r.getId().isBlank())
+                .filter(r -> r.getProposalId() != null && !r.getProposalId().isBlank())
                 .collect(Collectors.toMap(
-                        LlmResult::getId, // Key of the map is the proposal ID
+                        LlmResult::getProposalId, // Key of the map is the proposal ID
                         Function.identity(), // Value is the result object itself
                         (existing, replacement) -> { // Handle cases where the LLM returns duplicate IDs
                             log.warn("Duplicate proposalId found in LLM response: {}. Using the first result.",
-                                    existing.getId());
+                                    existing.getProposalId());
                             return existing;
                         }));
 
@@ -164,7 +164,7 @@ public class LlmMapper {
      */
     @Getter
     private static class LlmResult {
-        private String id;
+        private String proposalId;
         private String summary;
         private Double impactScore;
         private String justification;
