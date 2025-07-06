@@ -83,19 +83,12 @@ public class LlmAdapter implements LlmPort {
         }
 
         LlmApiRequest request = llmMapper.toApiRequest(validProposals, promptName, modelName);
-        log.debug("LLM API Request: {}", request);
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(apiKey);
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<LlmApiRequest> entity = new HttpEntity<>(request, headers);
 
         ResponseEntity<LlmApiResponse> response = restTemplate.postForEntity(apiUrl, entity, LlmApiResponse.class);
-        LlmApiResponse responseBody = response.getBody();
-        if (responseBody != null) {
-            log.debug("LLM API Response: {}", responseBody);
-        } else {
-            log.warn("LLM API Response body is null.");
-        }
         if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
             return llmMapper.updateProposalsFromApiResponse(response.getBody(), proposals);
         } else {

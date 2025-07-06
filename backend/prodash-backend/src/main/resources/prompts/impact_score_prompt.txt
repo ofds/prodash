@@ -32,4 +32,4 @@ Your output must be:
 ]
 
 ### Ementas to process:
-{ementas_json}
+{summaries_json}
