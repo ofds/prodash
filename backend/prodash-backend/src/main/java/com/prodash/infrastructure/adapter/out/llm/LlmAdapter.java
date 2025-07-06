@@ -90,6 +90,7 @@ public class LlmAdapter implements LlmPort {
 
         ResponseEntity<LlmApiResponse> response = restTemplate.postForEntity(apiUrl, entity, LlmApiResponse.class);
         if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+            log.info("LLM API Response Body for prompt '{}': {}", promptName, response.getBody());
             return llmMapper.updateProposalsFromApiResponse(response.getBody(), proposals);
         } else {
             log.error("Received non-OK status from LLM API: {}", response.getStatusCode());

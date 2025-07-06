@@ -166,7 +166,7 @@ public class LlmMapper {
     private static class LlmResult {
         private String id;
         private String summary;
-        private Integer impactScore;
+        private Double impactScore;
         private String justification;
     }
 
@@ -204,7 +204,7 @@ public class LlmMapper {
                 String jsonObjectString = content.substring(startIndex, endIndex + 1);
                 JsonObject resultJson = JsonParser.parseString(jsonObjectString).getAsJsonObject();
 
-                Integer score = resultJson.has("impact_score") ? resultJson.get("impact_score").getAsInt() : null;
+                Double score = resultJson.has("impactScore") ? resultJson.get("impactScore").getAsDouble() : null;
                 String justification = resultJson.has("justification") ? resultJson.get("justification").getAsString()
                         : null;
 

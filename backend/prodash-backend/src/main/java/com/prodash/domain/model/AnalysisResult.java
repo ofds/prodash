@@ -12,6 +12,6 @@ public class AnalysisResult {
     private String id;
     private String jobId;
     private String proposalId;
-    private Integer score;
+    private Double score;
     private String justification;
 }

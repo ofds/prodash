@@ -37,7 +37,7 @@ public class ProposalDocument {
     private String situation;
     @Field("presentation_date")
     private LocalDate presentationDate;
-    @Field("impact_score")
+    @Field("impactScore")
     private Double impactScore;
     private String justification;
     private String dispatch;
