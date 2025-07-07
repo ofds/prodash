@@ -17,7 +17,7 @@ export interface Proposal {
   numero: number;
   ano: number;
   ementa: string;
-  impactoScoreLLM: number;
+  impactScore: number;
 }
 
 // Corrected prop types for pagination handlers
@@ -61,7 +61,7 @@ export function ProposalsTable({
                 <TableCell>{proposal.id}</TableCell>
                 <TableCell>{`${proposal.siglaTipo} ${proposal.numero}/${proposal.ano}`}</TableCell>
                 <TableCell>{proposal.ementa}</TableCell>
-                <TableCell align="right">{proposal.impactoScoreLLM}</TableCell>
+                <TableCell align="right">{proposal.impactScore}</TableCell>
               </TableRow>
             ))}
           </TableBody>
