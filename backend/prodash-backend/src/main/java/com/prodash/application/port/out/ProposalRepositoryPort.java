@@ -13,13 +13,16 @@ public interface ProposalRepositoryPort {
 
     /**
      * Finds a paginated list of all proposals in the repository.
+     * 
      * @param pageable The pagination information.
      * @return A paginated list of all proposals.
      */
     Page<Proposal> findAll(Pageable pageable);
 
     /**
-     * Finds proposals whose ementa (summary) contains the given search term, with pagination.
+     * Finds proposals whose ementa (summary) contains the given search term, with
+     * pagination.
+     * 
      * @param searchTerm The term to search for within the proposal's ementa.
      * @param pageable   The pagination information.
      * @return A paginated list of matching proposals.
@@ -34,6 +37,9 @@ public interface ProposalRepositoryPort {
 
     List<String> findAllIds();
 
-    // The old findAll() is no longer needed if you always paginate.
-    // List<Proposal> findAll();
+    Page<Proposal> findAll(Pageable pageable, String sort, String order);
+
+    Page<Proposal> findByEmentaContaining(String searchTerm, Pageable pageable, String sort, String order);
+
+    Page<Proposal> search(String searchTerm, Double minImpactScore, Pageable pageable);
 }

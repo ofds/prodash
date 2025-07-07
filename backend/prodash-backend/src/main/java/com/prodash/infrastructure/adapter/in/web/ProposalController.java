@@ -20,22 +20,20 @@ public class ProposalController {
     }
 
     /**
-     * Handles GET requests to /api/proposals/search with parameters for filtering and pagination.
+     * Handles GET requests to /api/proposals/search with parameters for filtering
+     * and pagination.
      *
      * @param searchTerm A string to search in the proposal's ementa (summary).
-     * @param pageable   An object that provides pagination information (page number, size).
+     * @param pageable   An object that provides pagination information (page
+     *                   number, size).
      * @return A paginated list of Proposal objects that match the criteria.
      */
     @GetMapping("/search")
     public Page<Proposal> searchProposals(
-            @RequestParam(required = false) String searchTerm,
-            Pageable pageable) {
-        if (searchTerm != null && !searchTerm.isEmpty()) {
-            // This assumes you will create a 'findBySearchTerm' method in your repository
-            return proposalRepositoryPort.findByEmentaContaining(searchTerm, pageable);
-        } else {
-            // Returns a paginated list if no search term is provided
-            return proposalRepositoryPort.findAll(pageable);
-        }
+            @RequestParam(name = "query", required = false) String searchTerm,
+            @RequestParam(required = false) Double minImpactScore,
+            Pageable pageable) { // Spring automatically maps page, size, and sort parameters to this object
+
+        return proposalRepositoryPort.search(searchTerm, minImpactScore, pageable);
     }
 }

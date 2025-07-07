@@ -3,7 +3,9 @@ package com.prodash.infrastructure.adapter.out.persistence;
 import com.prodash.application.port.out.ProposalRepositoryPort;
 import com.prodash.domain.model.Proposal;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -30,14 +32,16 @@ public class ProposalRepositoryAdapter implements ProposalRepositoryPort {
 
     @Override
     public Page<Proposal> findAll(Pageable pageable) {
-        // Fetches a paginated list of documents and maps each page item to a domain object.
+        // Fetches a paginated list of documents and maps each page item to a domain
+        // object.
         Page<ProposalDocument> documentPage = mongoRepository.findAll(pageable);
         return documentPage.map(mapper::toDomain);
     }
 
     @Override
     public Page<Proposal> findByEmentaContaining(String searchTerm, Pageable pageable) {
-        // Fetches a paginated list of documents matching the search term (case-insensitive)
+        // Fetches a paginated list of documents matching the search term
+        // (case-insensitive)
         // and maps the results to domain objects.
         Page<ProposalDocument> documentPage = mongoRepository.findByEmentaContainingIgnoreCase(searchTerm, pageable);
         return documentPage.map(mapper::toDomain);
@@ -69,8 +73,37 @@ public class ProposalRepositoryAdapter implements ProposalRepositoryPort {
                 .collect(Collectors.toList());
     }
 
-    /*
-     * Note: The old `findAll()` method that returned a List<Proposal> is no longer
-     * defined in the port and can be removed, as we are now using pagination.
-     */
+    @Override
+    public Page<Proposal> findAll(Pageable pageable, String sort, String order) {
+        Pageable sortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
+                Sort.by(Sort.Direction.fromString(order), sort));
+        return mongoRepository.findAll(sortedPageable).map(mapper::toDomain);
+    }
+
+    @Override
+    public Page<Proposal> findByEmentaContaining(String searchTerm, Pageable pageable, String sort, String order) {
+        Pageable sortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
+                Sort.by(Sort.Direction.fromString(order), sort));
+        return mongoRepository.findByEmentaContainingIgnoreCase(searchTerm, sortedPageable).map(mapper::toDomain);
+    }
+
+    @Override
+public Page<Proposal> search(String searchTerm, Double minImpactScore, Pageable pageable) {
+    boolean hasSearchTerm = searchTerm != null && !searchTerm.isBlank();
+    boolean hasMinImpact = minImpactScore != null;
+
+    Page<ProposalDocument> results;
+
+    if (hasSearchTerm && hasMinImpact) {
+        results = mongoRepository.findByEmentaContainingIgnoreCaseAndImpactScoreGreaterThanEqual(searchTerm, minImpactScore, pageable);
+    } else if (hasSearchTerm) {
+        results = mongoRepository.findByEmentaContainingIgnoreCase(searchTerm, pageable);
+    } else if (hasMinImpact) {
+        results = mongoRepository.findByImpactScoreGreaterThanEqual(minImpactScore, pageable);
+    } else {
+        results = mongoRepository.findAll(pageable);
+    }
+
+    return results.map(mapper::toDomain);
+}
 }

@@ -25,4 +25,11 @@ public interface ProposalMongoRepository extends MongoRepository<ProposalDocumen
 
     @Query(value = "{}", fields = "{'_id' : 1}")
     List<ProposalDocument> findAllIds();
+
+    // Query for when both search term and impact score are provided
+    Page<ProposalDocument> findByEmentaContainingIgnoreCaseAndImpactScoreGreaterThanEqual(
+            String searchTerm, Double minImpactScore, Pageable pageable);
+
+    // Query for when only impact score is provided
+    Page<ProposalDocument> findByImpactScoreGreaterThanEqual(Double minImpactScore, Pageable pageable);
 }
