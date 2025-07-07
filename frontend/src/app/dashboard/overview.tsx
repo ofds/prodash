@@ -53,7 +53,7 @@ export default function Overview(): React.JSX.Element {
             <OutlinedInput
               defaultValue=""
               fullWidth
-              placeholder="Search proposals by summary..."
+              placeholder="Pesquisar propostas por ementa..."
               startAdornment={
                 <InputAdornment position="start">
                   <SvgIcon color="action" fontSize="small">
@@ -68,7 +68,7 @@ export default function Overview(): React.JSX.Element {
         </Card>
       </Grid>
       <Grid item xs={12}>
-        <ProposalsTable // Renamed component
+        <ProposalsTable
           proposals={proposals}
           count={totalElements}
           page={page}
