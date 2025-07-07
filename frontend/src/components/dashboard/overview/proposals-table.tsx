@@ -1,5 +1,3 @@
-// frontend/src/components/dashboard/overview/proposals-table.tsx
-
 import * as React from 'react';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -20,10 +18,11 @@ import {
   ListItem,
   ListItemText,
   Link,
+  TableSortLabel, // 1. Import TableSortLabel
 } from '@mui/material';
 import { KeyboardArrowDown as KeyboardArrowDownIcon, KeyboardArrowUp as KeyboardArrowUpIcon } from '@mui/icons-material';
 
-// [INICIO] Atualize a interface para incluir todos os campos da API
+// Interface Proposal (no changes needed)
 export interface Proposal {
   id: string;
   uri: string;
@@ -47,8 +46,8 @@ export interface Proposal {
   authors: { name: string; type: string }[];
   themes: any[];
 }
-// [FIM]
 
+// 2. Update ProposalsTableProps to include sort state and handler
 export interface ProposalsTableProps {
   proposals: Proposal[];
   count: number;
@@ -62,8 +61,11 @@ export interface ProposalsTableProps {
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => void;
   sx?: SxProps;
+  sort: { sortBy: string; order: 'asc' | 'desc' };
+  onSort: (sortBy: string) => void;
 }
-// [INICIO] Crie um componente de linha expansível
+
+// ProposalRow component (no changes needed)
 function ProposalRow({ proposal }: { proposal: Proposal }) {
   const [open, setOpen] = React.useState(false);
 
@@ -151,7 +153,6 @@ function ProposalRow({ proposal }: { proposal: Proposal }) {
     </React.Fragment>
   );
 }
-// [FIM]
 
 export function ProposalsTable({
   proposals = [],
@@ -161,6 +162,8 @@ export function ProposalsTable({
   rowsPerPage,
   onPageChange,
   onRowsPerPageChange,
+  sort, // 3. Destructure sort and onSort props
+  onSort,
 }: ProposalsTableProps): React.JSX.Element {
   return (
     <Card sx={sx}>
@@ -169,22 +172,30 @@ export function ProposalsTable({
       <Box sx={{ overflowX: 'auto' }}>
         <Table sx={{ minWidth: 800 }}>
           <TableHead>
-            {/* [INICIO] Adicione uma coluna para o botão de expansão */}
             <TableRow>
               <TableCell />
               <TableCell>ID</TableCell>
               <TableCell>Proposta</TableCell>
               <TableCell>Ementa</TableCell>
-              <TableCell align="right">Pontuação de Impacto</TableCell>
+              {/* 4. Add TableSortLabel to the Impact Score header */}
+              <TableCell
+                align="right"
+                sortDirection={sort.sortBy === 'impactScore' ? sort.order : false}
+              >
+                <TableSortLabel
+                  active={sort.sortBy === 'impactScore'}
+                  direction={sort.sortBy === 'impactScore' ? sort.order : 'asc'}
+                  onClick={() => onSort('impactScore')}
+                >
+                  Pontuação de Impacto
+                </TableSortLabel>
+              </TableCell>
             </TableRow>
-            {/* [FIM] */}
           </TableHead>
           <TableBody>
-            {/* [INICIO] Renderize as linhas expansíveis */}
             {proposals.map((proposal) => (
               <ProposalRow key={proposal.id} proposal={proposal} />
             ))}
-            {/* [FIM] */}
           </TableBody>
         </Table>
       </Box>
