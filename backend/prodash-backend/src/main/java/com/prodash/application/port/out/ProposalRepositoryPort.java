@@ -9,37 +9,58 @@ import java.util.Optional;
 
 public interface ProposalRepositoryPort {
 
+    /**
+     * Saves a proposal to the repository.
+     *
+     * @param proposal The proposal to save.
+     * @return The saved proposal.
+     */
     Proposal save(Proposal proposal);
 
     /**
      * Finds a paginated list of all proposals in the repository.
-     * 
+     *
      * @param pageable The pagination information.
      * @return A paginated list of all proposals.
      */
     Page<Proposal> findAll(Pageable pageable);
 
     /**
-     * Finds proposals whose ementa (summary) contains the given search term, with
-     * pagination.
-     * 
-     * @param searchTerm The term to search for within the proposal's ementa.
-     * @param pageable   The pagination information.
-     * @return A paginated list of matching proposals.
+     * Finds a proposal by its unique identifier.
+     *
+     * @param id The ID of the proposal.
+     * @return An Optional containing the proposal if found, or empty otherwise.
      */
-    Page<Proposal> findByEmentaContaining(String searchTerm, Pageable pageable);
-
     Optional<Proposal> findById(String id);
 
+    /**
+     * Finds all proposals that do not yet have a summary.
+     *
+     * @return A list of proposals with a null summary.
+     */
     List<Proposal> findBySummaryIsNull();
 
+    /**
+     * Finds all proposals that have a summary but do not have an impact score.
+     *
+     * @return A list of proposals with a summary but a null impact score.
+     */
     List<Proposal> findBySummaryIsNotNullAndImpactScoreIsNull();
 
+    /**
+     * Retrieves a list of all proposal IDs.
+     *
+     * @return A list of all proposal IDs.
+     */
     List<String> findAllIds();
 
-    Page<Proposal> findAll(Pageable pageable, String sort, String order);
-
-    Page<Proposal> findByEmentaContaining(String searchTerm, Pageable pageable, String sort, String order);
-
+    /**
+     * Searches for proposals based on dynamic filter criteria.
+     *
+     * @param searchTerm      The term to search for in the ementa (can be null).
+     * @param minImpactScore  The minimum impact score to filter by (can be null).
+     * @param pageable        The pagination and sorting information.
+     * @return A paginated list of proposals matching the criteria.
+     */
     Page<Proposal> search(String searchTerm, Double minImpactScore, Pageable pageable);
 }
